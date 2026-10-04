@@ -1,0 +1,30 @@
+# IDEs & Editors
+.idea/
+.vscode/
+*.swp
+
+# Java (Dành cho phần ObjectDB)
+target/
+*.class
+*.jar
+*.war
+.classpath
+.project
+.settings/
+
+# Python (Dành cho phần script tạo dữ liệu)
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.env
+
+# ObjectDB & Database temporary files
+*.odb
+*.tmp
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db

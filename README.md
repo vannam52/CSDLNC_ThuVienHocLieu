@@ -38,4 +38,14 @@
    - **Đề xuất:** draw.io hoặc dbdiagram.io để vẽ sơ đồ EER.
 
 ---
+## 💡 Mẹo nhỏ (Tips)
+**Cách Reset (Xóa trắng) Database nhanh:**
+Trong quá trình phát triển, nếu bạn code sai, muốn sửa file SQL và chạy tạo lại các bảng từ đầu mà không bị báo lỗi `Table already exists` (Bảng đã tồn tại), hãy chạy 2 dòng lệnh "quyền lực" sau trong pgAdmin trước khi chạy script tạo bảng mới:
+```sql
+DROP SCHEMA public CASCADE;
+CREATE SCHEMA public;
+```
+*(Lưu ý: Lệnh này sẽ **xóa vĩnh viễn** toàn bộ bảng và dữ liệu trong Database hiện tại. Chỉ dùng khi bạn đang test và muốn reset làm lại từ đầu).*
+
+---
 *Lưu ý: Môi trường cơ bản đã sẵn sàng, các cấu hình nâng cao sẽ được thêm vào trong quá trình phát triển.*
