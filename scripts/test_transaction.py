@@ -46,6 +46,18 @@ def muon_sach(ten_sinh_vien):
         cur.close()
         conn.close()
 
+# Tự động trả sách về trạng thái 'San sang' trước khi bắt đầu test
+def reset_sach():
+    conn = psycopg2.connect(**DB_CONFIG)
+    cur = conn.cursor()
+    cur.execute("UPDATE BanSao SET TrangThai = 'San sang' WHERE MaBanSao = 'BS_001'")
+    conn.commit()
+    cur.close()
+    conn.close()
+    print("🔄 Đã reset sách BS_001 về trạng thái 'San sang' trên kệ.\n")
+
+reset_sach()
+
 # Tạo 2 luồng (Giả lập 2 sinh viên bấm nút cùng lúc)
 thread1 = threading.Thread(target=muon_sach, args=("Sinh viên A",))
 thread2 = threading.Thread(target=muon_sach, args=("Sinh viên B",))

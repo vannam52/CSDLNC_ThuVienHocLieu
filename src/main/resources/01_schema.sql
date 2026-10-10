@@ -1,9 +1,4 @@
--- =======================================================
--- THIẾT KẾ CSDL THƯ VIỆN ĐA PHƯƠNG TIỆN (ĐỀ TÀI 3)
--- CHIẾN LƯỢC: BẢNG CHA - BẢNG CON (Class Table Inheritance)
--- =======================================================
-
--- 1. BẢNG CHA: Học Liệu
+-- 1. BẢNG CHA: HocLieu
 CREATE TABLE HocLieu (
     MaHocLieu VARCHAR(20) PRIMARY KEY,
     TieuDe VARCHAR(255) NOT NULL,
@@ -11,14 +6,11 @@ CREATE TABLE HocLieu (
     NamXuatBan INT,
     NgonNgu VARCHAR(50),
     GiaTien DECIMAL(12, 2),
-    NgayNhapKho DATE, 
+    NgayNhapKho DATE DEFAULT CURRENT_DATE,
     AnhBia VARCHAR(255)
 );
 
--- =======================================================
--- 2. CÁC BẢNG CON (Kế thừa từ Học Liệu)
--- =======================================================
-
+-- 2. BẢNG CON (Kế thừa - Class Table Inheritance)
 CREATE TABLE Sach (
     MaHocLieu VARCHAR(20) PRIMARY KEY REFERENCES HocLieu(MaHocLieu) ON DELETE CASCADE,
     ISBN VARCHAR(50) UNIQUE NOT NULL,
@@ -38,25 +30,21 @@ CREATE TABLE LuanVan (
 
 CREATE TABLE VideoBaiGiang (
     MaHocLieu VARCHAR(20) PRIMARY KEY REFERENCES HocLieu(MaHocLieu) ON DELETE CASCADE,
-    ThoiLuong INT, -- Tính bằng phút
+    ThoiLuong INT, -- Phút
     DoPhanGiai VARCHAR(20),
     NgonNguPhuDe VARCHAR(50),
-    DungLuong DECIMAL(8, 2) -- Tính bằng MB
+    DungLuong DECIMAL(8, 2)
 );
 
 CREATE TABLE TaiLieuDienTu (
     MaHocLieu VARCHAR(20) PRIMARY KEY REFERENCES HocLieu(MaHocLieu) ON DELETE CASCADE,
-    DinhDang VARCHAR(20), -- PDF, EPUB...
-    DungLuong DECIMAL(8, 2), -- Tính bằng MB
-    QuyenTruyCap VARCHAR(50), -- Public / Internal
+    DinhDang VARCHAR(20),
+    DungLuong DECIMAL(8, 2),
+    QuyenTruyCap VARCHAR(50),
     URL_LienKet TEXT
 );
 
--- =======================================================
--- 3. XỬ LÝ ĐA TRỊ (Chuẩn 4NF)
--- =======================================================
-
--- Tác Giả
+-- 3. XỬ LÝ ĐA TRỊ (Chuẩn hóa 4NF)
 CREATE TABLE TacGia (
     MaTacGia VARCHAR(20) PRIMARY KEY,
     TenTacGia VARCHAR(100) NOT NULL,
@@ -70,11 +58,12 @@ CREATE TABLE HocLieu_TacGia (
     PRIMARY KEY (MaHocLieu, MaTacGia)
 );
 
--- Chủ Đề
+-- Cây chủ đề (Có tự liên kết đệ quy ChuDeCha)
 CREATE TABLE ChuDe (
     MaChuDe VARCHAR(20) PRIMARY KEY,
     TenChuDe VARCHAR(100) NOT NULL,
-    MoTaChuDe TEXT
+    MoTaChuDe TEXT,
+    ChuDeCha VARCHAR(20) REFERENCES ChuDe(MaChuDe) ON DELETE SET NULL
 );
 
 CREATE TABLE HocLieu_ChuDe (
@@ -83,20 +72,15 @@ CREATE TABLE HocLieu_ChuDe (
     PRIMARY KEY (MaHocLieu, MaChuDe)
 );
 
--- =======================================================
--- 4. QUẢN LÝ MƯỢN TRẢ & GIAO DỊCH
--- =======================================================
-
--- Bản Sao (Quyển vật lý)
+-- 4. BẢN SAO VẬT LÝ & QUẢN LÝ MƯỢN TRẢ
 CREATE TABLE BanSao (
     MaBanSao VARCHAR(20) PRIMARY KEY,
     MaHocLieu VARCHAR(20) REFERENCES HocLieu(MaHocLieu) ON DELETE CASCADE,
-    TrangThai VARCHAR(50) DEFAULT 'San sang',
+    TrangThai VARCHAR(50) DEFAULT 'San sang', -- 'San sang', 'Dang muon', 'Bao tri'
     TinhTrangVatLy VARCHAR(100),
     ViTriKe VARCHAR(100)
 );
 
--- Bạn Đọc
 CREATE TABLE BanDoc (
     MaBanDoc VARCHAR(20) PRIMARY KEY,
     HoTen VARCHAR(100) NOT NULL,
@@ -104,12 +88,10 @@ CREATE TABLE BanDoc (
     SoDienThoai VARCHAR(20),
     MatKhau VARCHAR(255) NOT NULL,
     LoaiTaiKhoan VARCHAR(50),
-    Khoa VARCHAR(100),
     NgayHetHan DATE,
     TaiKhoanBiKhoa BOOLEAN DEFAULT FALSE
 );
 
--- Phiếu Mượn (Dùng để test Transaction)
 CREATE TABLE PhieuMuon (
     MaPhieu VARCHAR(20) PRIMARY KEY,
     MaBanDoc VARCHAR(20) REFERENCES BanDoc(MaBanDoc),
