@@ -60,29 +60,43 @@ CSDLNC_ThuVienHocLieu/
 └── run.bat / mvn.cmd   # Script khởi chạy chương trình nhanh chóng
 ```
 
-## 🚀 4. Hướng dẫn Khởi chạy và Tải môi trường
+## 🚀 4. Hướng dẫn Khởi chạy và Kiểm thử
 
-### Yêu cầu cài đặt môi trường:
-Để máy tính có thể biên dịch và chạy dự án này, bạn cần cài đặt các công cụ sau:
-1. **Java JDK 17+:** [Tải tại đây](https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html). Nhớ cấu hình biến môi trường `JAVA_HOME`.
-2. **PostgreSQL 14+:** [Tải tại đây](https://www.postgresql.org/download/). (Mật khẩu mặc định lúc cài đặt cấu hình là `12345` để khớp với script, nếu khác hãy sửa lại trong file Python).
-3. **Python 3.10+:** [Tải tại đây](https://www.python.org/downloads/). Cài thêm thư viện bằng lệnh: `pip install psycopg2 faker`.
-4. **Apache Maven:** [Tải tại đây](https://maven.apache.org/download.cgi). (Đã tích hợp sẵn file `mvn.cmd` nên có thể bỏ qua nếu máy bạn chưa cài).
+### Yêu cầu cấu hình môi trường:
+Để có thể chạy được dự án này (kể cả trên máy giáo viên), bạn cần chuẩn bị:
+1. **Java JDK 17+:** [Tải tại đây](https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html). Chú ý cấu hình biến môi trường `JAVA_HOME`.
+2. **PostgreSQL 14+:** [Tải tại đây](https://www.postgresql.org/download/). (Mật khẩu user `postgres` mặc định để là `12345` cho đồng bộ, nếu máy thầy cô là mật khẩu khác, hãy sửa lại trong file `setup_library_management_db.py`).
+3. **Python 3.10+:** [Tải tại đây](https://www.python.org/downloads/). Dùng để chạy script tạo CSDL tự động.
+   - Cài thêm 2 thư viện phụ trợ cho Python: `pip install psycopg2 faker`
+4. **Apache Maven:** Đã được nhóm tích hợp sẵn file `mvn.cmd` vào mã nguồn nên không cần cài đặt ngoài.
 
-### Quy trình khởi chạy:
-**Bước 1: Khởi tạo CSDL tự động bằng Python**
-Mở Terminal tại thư mục gốc của đồ án và chạy lệnh sau để tự tạo Database `library_management` và chèn dữ liệu mẫu:
+### Quy trình khởi chạy dự án:
+
+**Bước 1: Khởi tạo CSDL tự động bằng Python (Bắt buộc)**
+Mở Terminal (hoặc CMD/PowerShell) tại thư mục gốc của đồ án và chạy lệnh sau để tự tạo Database `library_management` và chèn các dữ liệu mẫu khớp với kịch bản test:
 ```powershell
 python scripts\setup_library_management_db.py
 ```
 
-**Bước 2: Biên dịch và Chạy ứng dụng Java Console**
-Gõ 2 lệnh sau để Maven tự động tải thư viện ObjectDB/PostgreSQL về và khởi chạy Menu ứng dụng:
+**Bước 2: Sinh dữ liệu khổng lồ - Big Data (Tuỳ chọn)**
+Để chứng minh cho giáo viên thấy kỹ thuật Đánh Chỉ Mục (Index) ở Menu số 7 hoạt động hiệu quả, hãy chạy thêm lệnh sau để bơm 10.000+ bản ghi giả lập vào DB:
+```powershell
+python scripts\generate_mock_data.py
+```
+
+**Bước 3: Biên dịch và Chạy ứng dụng Java Console**
+Gõ 2 lệnh sau để Maven tự động tải thư viện (PostgreSQL Driver, ObjectDB) và chạy chương trình chính:
 ```powershell
 .\mvn.cmd clean compile
 .\run.bat
 ```
-*(Chương trình sẽ hiển thị Menu Console từ 1-7 để bạn kiểm chứng trực tiếp từng yêu cầu của Đề tài 3).*
+
+**Bước 4: Kịch bản Kiểm thử qua Menu (Kịch bản "ăn điểm")**
+Khi màn hình Console hiện lên, hãy biểu diễn cho giáo viên theo các Menu đắt giá nhất sau:
+- **Chọn Menu 3:** Thể hiện các câu lệnh SQL siêu khó (`WITH RECURSIVE` đệ quy danh mục, `GROUP BY ... HAVING`).
+- **Chọn Menu 4 & 5:** Kích hoạt chức năng Transaction 2 luồng tranh chấp nhau mượn sách. Báo cáo sẽ chứng minh được tính chất ACID bằng khóa bi quan (Pessimistic Locking `FOR UPDATE`).
+- **Chọn Menu 6:** Thực thi OQL (Object Query Language) để truy xuất dữ liệu kế thừa không cần dùng lệnh `JOIN` như SQL, chứng minh tính ưu việt của CSDL Đối tượng.
+- **Chọn Menu 7:** Chạy báo cáo đo lường chi phí `EXPLAIN ANALYZE` bằng Mili-giây để so sánh tốc độ quét Seq Scan vs Index Scan.
 
 ## 📚 5. Tài liệu tham khảo
 1. **Fundamentals of Database Systems:** Đọc Chương 4 về EER, Chương 12 về CSDL đối tượng và Chương 15 về thuật toán thiết kế, các phụ thuộc nâng cao. [pearson.com](https://www.pearson.com)
