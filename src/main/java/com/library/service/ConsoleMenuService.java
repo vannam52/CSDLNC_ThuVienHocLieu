@@ -23,13 +23,14 @@ public class ConsoleMenuService {
             System.out.println("====================================================");
             System.out.println("1. [SQL Nâng cao] Tra cứu danh mục chủ đề (WITH RECURSIVE)");
             System.out.println("2. [SQL Nâng cao] Thống kê học liệu đa chủ đề (4NF)");
-            System.out.println("3. [Transaction] Mô phỏng mượn sách đồng thời (Locking)");
-            System.out.println("4. [Transaction] Mô phỏng Lỗi & Rollback");
-            System.out.println("5. [OQL/ObjectDB] Thực thi bộ truy vấn OQL / JPQL");
-            System.out.println("6. [Thực nghiệm] Đo hiệu năng chỉ mục GIN Trigram");
+            System.out.println("3. [SQL Nâng cao] Thống kê lượt mượn học liệu");
+            System.out.println("4. [Transaction] Mô phỏng mượn sách đồng thời (Locking)");
+            System.out.println("5. [Transaction] Mô phỏng Lỗi & Rollback");
+            System.out.println("6. [OQL/ObjectDB] Thực thi bộ truy vấn OQL / JPQL");
+            System.out.println("7. [Thực nghiệm] Đo hiệu năng chỉ mục GIN Trigram");
             System.out.println("0. Thoát chương trình");
             System.out.println("====================================================");
-            System.out.print("Chọn chức năng demo (0-6): ");
+            System.out.print("Chọn chức năng demo (0-7): ");
 
             int choice = -1;
             try {
@@ -47,15 +48,18 @@ public class ConsoleMenuService {
                     hocLieuDAO.getHocLieuDaChuDe();
                     break;
                 case 3:
-                    transactionDAO.demoConcurrentBorrow("BS01");
+                    hocLieuDAO.thongKeLuotMuon();
                     break;
                 case 4:
-                    transactionDAO.demoRollbackAndVerify();
+                    transactionDAO.demoConcurrentBorrow("BS01");
                     break;
                 case 5:
-                    oqlQueryDAO.executeOqlQueries();
+                    transactionDAO.demoRollbackAndVerify();
                     break;
                 case 6:
+                    oqlQueryDAO.executeOqlQueries();
+                    break;
+                case 7:
                     performanceDAO.runPerformanceExperiment();
                     break;
                 case 0:

@@ -1,13 +1,13 @@
 package com.library.model;
 
-public class ChuDe {
+public class TacGia {
     private Long id;
     private String ten;
 
-    public ChuDe() {
+    public TacGia() {
     }
 
-    public ChuDe(Long id, String ten) {
+    public TacGia(Long id, String ten) {
         this.id = id;
         this.ten = ten;
     }

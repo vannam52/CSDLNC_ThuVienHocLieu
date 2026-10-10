@@ -77,4 +77,39 @@ public class HocLieuDAO {
             System.err.println("Lỗi truy vấn CSDL: " + e.getMessage());
         }
     }
+
+    // DEMO 3: Thống kê lượt mượn (Yêu cầu đồ án 3)
+    public void thongKeLuotMuon() {
+        String sql = "SELECT h.MaHocLieu, h.TieuDe, COUNT(p.MaPhieu) AS LuotMuon " +
+                     "FROM HocLieu h " +
+                     "JOIN BanSao b ON h.MaHocLieu = b.MaHocLieu " +
+                     "JOIN PhieuMuon p ON b.MaBanSao = p.MaBanSao " +
+                     "GROUP BY h.MaHocLieu, h.TieuDe " +
+                     "ORDER BY LuotMuon DESC;";
+
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql);
+             ResultSet rs = stmt.executeQuery()) {
+
+            System.out.println("------------------------------------------------------------------");
+            System.out.printf("%-12s | %-35s | %-10s%n", "Mã Học Liệu", "Tiêu Đề", "Lượt Mượn");
+            System.out.println("------------------------------------------------------------------");
+
+            boolean hasRows = false;
+            while (rs.next()) {
+                hasRows = true;
+                System.out.printf("%-12s | %-35s | %-10d%n",
+                        rs.getString("MaHocLieu"),
+                        rs.getString("TieuDe"),
+                        rs.getInt("LuotMuon"));
+            }
+            if (!hasRows) {
+                System.out.println("Chưa có lượt mượn nào.");
+            }
+            System.out.println("------------------------------------------------------------------");
+
+        } catch (SQLException e) {
+            System.err.println("Lỗi truy vấn CSDL: " + e.getMessage());
+        }
+    }
 }
