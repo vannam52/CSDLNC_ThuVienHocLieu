@@ -1,0 +1,367 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1350 820" width="100%" height="100%">
+  <defs>
+    <style>
+      .entity-rect { fill: #ffffff; stroke: #111111; stroke-width: 2.2; }
+      .diamond { fill: #ffffff; stroke: #111111; stroke-width: 1.8; }
+      .circle-isa { fill: #ffffff; stroke: #111111; stroke-width: 2; }
+      .attr-ellipse { fill: #ffffff; stroke: #111111; stroke-width: 1.4; }
+      .edge { stroke: #111111; stroke-width: 1.4; fill: none; }
+      .isa-edge { stroke: #111111; stroke-width: 2.5; fill: none; }
+      .text-title { font-family: Arial, Helvetica, sans-serif; font-size: 14px; font-weight: bold; fill: #111111; text-anchor: middle; dominant-baseline: middle; }
+      .text-diamond { font-family: Arial, Helvetica, sans-serif; font-size: 11.5px; font-weight: 600; fill: #111111; text-anchor: middle; dominant-baseline: middle; }
+      .text-isa { font-family: Arial, Helvetica, sans-serif; font-size: 16px; font-weight: bold; fill: #111111; text-anchor: middle; dominant-baseline: middle; }
+      .text-attr { font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; fill: #111111; text-anchor: middle; dominant-baseline: middle; }
+      .text-pk { font-family: Arial, Helvetica, sans-serif; font-size: 10.5px; font-weight: bold; text-decoration: underline; fill: #111111; text-anchor: middle; dominant-baseline: middle; }
+      .text-card { font-family: Arial, Helvetica, sans-serif; font-size: 11.5px; font-weight: bold; fill: #222222; text-anchor: middle; dominant-baseline: middle; }
+    </style>
+  </defs>
+
+  <!-- Background -->
+  <rect width="100%" height="100%" fill="#ffffff"/>
+
+  <!-- ================= EDGES (DRAW FIRST) ================= -->
+
+  <!-- HocLieu attributes edges -->
+  <line x1="620" y1="140" x2="380" y2="40" class="edge"/>
+  <line x1="640" y1="140" x2="450" y2="40" class="edge"/>
+  <line x1="660" y1="140" x2="540" y2="35" class="edge"/>
+  <line x1="680" y1="140" x2="630" y2="30" class="edge"/>
+  <line x1="700" y1="140" x2="720" y2="30" class="edge"/>
+  <line x1="720" y1="140" x2="810" y2="35" class="edge"/>
+  <line x1="740" y1="140" x2="900" y2="40" class="edge"/>
+  <line x1="750" y1="140" x2="960" y2="60" class="edge"/>
+
+  <!-- TacGia attributes edges -->
+  <line x1="160" y1="150" x2="60" y2="90" class="edge"/>
+  <line x1="160" y1="160" x2="60" y2="135" class="edge"/>
+  <line x1="160" y1="170" x2="60" y2="180" class="edge"/>
+  <line x1="160" y1="180" x2="60" y2="225" class="edge"/>
+
+  <!-- TacGia - VietBoi - HocLieu -->
+  <line x1="220" y1="165" x2="360" y2="165" class="edge"/>
+  <line x1="440" y1="165" x2="610" y2="165" class="edge"/>
+
+  <!-- HocLieu - PhanLoai - ChuDe -->
+  <line x1="770" y1="165" x2="940" y2="165" class="edge"/>
+  <line x1="1020" y1="165" x2="1140" y2="165" class="edge"/>
+
+  <!-- ChuDe attributes edges -->
+  <line x1="1200" y1="140" x2="1140" y2="85" class="edge"/>
+  <line x1="1220" y1="140" x2="1240" y2="85" class="edge"/>
+  <line x1="1230" y1="140" x2="1310" y2="105" class="edge"/>
+
+  <!-- ChuDe - ChuDeCha (Self recursive) -->
+  <path d="M 1250,150 C 1330,130 1330,220 1250,185" class="edge"/>
+
+  <!-- HocLieu - ISA 'd' -->
+  <line x1="690" y1="190" x2="690" y2="245" class="isa-edge"/>
+
+  <!-- ISA 'd' - 4 Subclasses -->
+  <path d="M 690,277 L 690,300 L 175,300 L 175,340" class="isa-edge"/>
+  <path d="M 690,277 L 690,300 L 415,300 L 415,340" class="isa-edge"/>
+  <path d="M 690,277 L 690,300 L 680,300 L 680,340" class="isa-edge"/>
+  <path d="M 690,277 L 690,300 L 945,300 L 945,340" class="isa-edge"/>
+
+  <!-- Sach attributes edges -->
+  <line x1="140" y1="385" x2="80" y2="430" class="edge"/>
+  <line x1="160" y1="385" x2="100" y2="475" class="edge"/>
+  <line x1="180" y1="385" x2="180" y2="475" class="edge"/>
+  <line x1="200" y1="385" x2="250" y2="445" class="edge"/>
+
+  <!-- LuanVan attributes edges -->
+  <line x1="380" y1="385" x2="310" y2="440" class="edge"/>
+  <line x1="400" y1="385" x2="360" y2="485" class="edge"/>
+  <line x1="415" y1="385" x2="430" y2="485" class="edge"/>
+  <line x1="435" y1="385" x2="495" y2="465" class="edge"/>
+  <line x1="450" y1="385" x2="530" y2="425" class="edge"/>
+
+  <!-- VideoBaiGiang attributes edges -->
+  <line x1="640" y1="385" x2="595" y2="440" class="edge"/>
+  <line x1="665" y1="385" x2="645" y2="480" class="edge"/>
+  <line x1="695" y1="385" x2="710" y2="480" class="edge"/>
+  <line x1="720" y1="385" x2="760" y2="440" class="edge"/>
+
+  <!-- TaiLieuDienTu attributes edges -->
+  <line x1="915" y1="385" x2="840" y2="440" class="edge"/>
+  <line x1="935" y1="385" x2="890" y2="485" class="edge"/>
+  <line x1="955" y1="385" x2="960" y2="485" class="edge"/>
+  <line x1="975" y1="385" x2="1010" y2="440" class="edge"/>
+
+  <!-- HocLieu - TonTai - BanSao -->
+  <path d="M 770,180 L 1110,215" class="edge"/>
+  <path d="M 1110,255 L 1110,340" class="edge"/>
+
+  <!-- BanSao attributes edges -->
+  <line x1="1170" y1="350" x2="1255" y2="330" class="edge"/>
+  <line x1="1170" y1="365" x2="1265" y2="370" class="edge"/>
+  <line x1="1160" y1="385" x2="1245" y2="415" class="edge"/>
+  <line x1="1120" y1="385" x2="1170" y2="445" class="edge"/>
+
+  <!-- BanSao - BaoGom - PhieuMuon -->
+  <line x1="1075" y1="385" x2="1030" y2="465" class="edge"/>
+  <line x1="1030" y1="505" x2="985" y2="585" class="edge"/>
+
+  <!-- PhieuMuon attributes edges -->
+  <line x1="970" y1="630" x2="1015" y2="685" class="edge"/>
+  <line x1="990" y1="630" x2="1080" y2="670" class="edge"/>
+  <line x1="1010" y1="620" x2="1135" y2="635" class="edge"/>
+  <line x1="1010" y1="605" x2="1145" y2="590" class="edge"/>
+  <line x1="1000" y1="590" x2="1130" y2="545" class="edge"/>
+  <line x1="950" y1="630" x2="945" y2="700" class="edge"/>
+  <line x1="920" y1="630" x2="880" y2="700" class="edge"/>
+
+  <!-- PhieuMuon - ThucHien - BanDoc -->
+  <line x1="910" y1="605" x2="670" y2="605" class="edge"/>
+  <line x1="590" y1="605" x2="350" y2="605" class="edge"/>
+
+  <!-- BanDoc attributes edges -->
+  <line x1="230" y1="615" x2="120" y2="560" class="edge"/>
+  <line x1="230" y1="625" x2="100" y2="605" class="edge"/>
+  <line x1="240" y1="630" x2="110" y2="655" class="edge"/>
+  <line x1="260" y1="630" x2="155" y2="700" class="edge"/>
+  <line x1="290" y1="630" x2="235" y2="730" class="edge"/>
+  <line x1="315" y1="630" x2="320" y2="735" class="edge"/>
+  <line x1="340" y1="630" x2="405" y2="720" class="edge"/>
+
+  <!-- ================= ENTITIES (RECTANGLES) ================= -->
+  <!-- HocLieu -->
+  <rect x="610" y="140" width="160" height="50" rx="2" class="entity-rect"/>
+  <text x="690" y="165" class="text-title">HocLieu</text>
+
+  <!-- TacGia -->
+  <rect x="110" y="140" width="110" height="50" rx="2" class="entity-rect"/>
+  <text x="165" y="165" class="text-title">TacGia</text>
+
+  <!-- ChuDe -->
+  <rect x="1140" y="140" width="110" height="50" rx="2" class="entity-rect"/>
+  <text x="1195" y="165" class="text-title">ChuDe</text>
+
+  <!-- ISA circle -->
+  <circle cx="690" cy="261" r="16" class="circle-isa"/>
+  <text x="690" y="261" class="text-isa">d</text>
+
+  <!-- Subclasses -->
+  <rect x="115" y="340" width="120" height="45" rx="2" class="entity-rect"/>
+  <text x="175" y="362" class="text-title">Sach</text>
+
+  <rect x="350" y="340" width="130" height="45" rx="2" class="entity-rect"/>
+  <text x="415" y="362" class="text-title">LuanVan</text>
+
+  <rect x="605" y="340" width="150" height="45" rx="2" class="entity-rect"/>
+  <text x="680" y="362" class="text-title">VideoBaiGiang</text>
+
+  <rect x="865" y="340" width="160" height="45" rx="2" class="entity-rect"/>
+  <text x="945" y="362" class="text-title">TaiLieuDienTu</text>
+
+  <!-- BanSao -->
+  <rect x="1050" y="340" width="120" height="45" rx="2" class="entity-rect"/>
+  <text x="1110" y="362" class="text-title">BanSao</text>
+
+  <!-- PhieuMuon -->
+  <rect x="890" y="585" width="130" height="48" rx="2" class="entity-rect"/>
+  <text x="955" y="609" class="text-title">PhieuMuon</text>
+
+  <!-- BanDoc -->
+  <rect x="230" y="585" width="120" height="48" rx="2" class="entity-rect"/>
+  <text x="290" y="609" class="text-title">BanDoc</text>
+
+  <!-- ================= RELATIONSHIPS (DIAMONDS) ================= -->
+  <!-- VietBoi -->
+  <polygon points="400,145 440,165 400,185 360,165" class="diamond"/>
+  <text x="400" y="165" class="text-diamond">VietBoi</text>
+  <text x="235" y="155" class="text-card">M</text>
+  <text x="595" y="155" class="text-card">N</text>
+
+  <!-- PhanLoai -->
+  <polygon points="980,145 1020,165 980,185 940,165" class="diamond"/>
+  <text x="980" y="165" class="text-diamond">PhanLoai</text>
+  <text x="785" y="155" class="text-card">N</text>
+  <text x="1125" y="155" class="text-card">M</text>
+
+  <!-- ChuDeCha (recursive) -->
+  <polygon points="1290,165 1330,185 1290,205 1250,185" class="diamond"/>
+  <text x="1290" y="185" class="text-diamond" font-size="10">ChuDeCha</text>
+  <text x="1265" y="145" class="text-card">1</text>
+  <text x="1265" y="220" class="text-card">N</text>
+
+  <!-- TonTai -->
+  <polygon points="1110,215 1145,235 1110,255 1075,235" class="diamond"/>
+  <text x="1110" y="235" class="text-diamond">TonTai</text>
+  <text x="785" y="195" class="text-card">1</text>
+  <text x="1125" y="325" class="text-card">N</text>
+
+  <!-- BaoGom -->
+  <polygon points="1030,465 1065,485 1030,505 995,485" class="diamond"/>
+  <text x="1030" y="485" class="text-diamond">BaoGom</text>
+  <text x="1090" y="405" class="text-card">N</text>
+  <text x="995" y="565" class="text-card">1</text>
+
+  <!-- ThucHien -->
+  <polygon points="630,585 670,605 630,625 590,605" class="diamond"/>
+  <text x="630" y="605" class="text-diamond">ThucHien</text>
+  <text x="365" y="595" class="text-card">1</text>
+  <text x="875" y="595" class="text-card">N</text>
+
+  <!-- ================= ATTRIBUTES (ELLIPSES) ================= -->
+
+  <!-- HocLieu attributes -->
+  <ellipse cx="380" cy="40" rx="42" ry="16" class="attr-ellipse"/>
+  <text x="380" y="40" class="text-pk">MaHocLieu</text>
+
+  <ellipse cx="465" cy="40" rx="35" ry="16" class="attr-ellipse"/>
+  <text x="465" y="40" class="text-attr">TieuDe</text>
+
+  <ellipse cx="545" cy="35" rx="32" ry="16" class="attr-ellipse"/>
+  <text x="545" y="35" class="text-attr">MoTa</text>
+
+  <ellipse cx="635" cy="30" rx="42" ry="16" class="attr-ellipse"/>
+  <text x="635" y="30" class="text-attr">NamXuatBan</text>
+
+  <ellipse cx="730" cy="30" rx="38" ry="16" class="attr-ellipse"/>
+  <text x="730" y="30" class="text-attr">NgonNgu</text>
+
+  <ellipse cx="820" cy="35" rx="35" ry="16" class="attr-ellipse"/>
+  <text x="820" y="35" class="text-attr">GiaTien</text>
+
+  <ellipse cx="910" cy="40" rx="45" ry="16" class="attr-ellipse"/>
+  <text x="910" y="40" class="text-attr">NgayNhapKho</text>
+
+  <ellipse cx="985" cy="65" rx="32" ry="16" class="attr-ellipse"/>
+  <text x="985" y="65" class="text-attr">AnhBia</text>
+
+  <!-- TacGia attributes -->
+  <ellipse cx="60" cy="90" rx="40" ry="16" class="attr-ellipse"/>
+  <text x="60" y="90" class="text-pk">MaTacGia</text>
+
+  <ellipse cx="55" cy="135" rx="40" ry="16" class="attr-ellipse"/>
+  <text x="55" y="135" class="text-attr">TenTacGia</text>
+
+  <ellipse cx="55" cy="180" rx="48" ry="16" class="attr-ellipse"/>
+  <text x="55" y="180" class="text-attr">DonViCongTac</text>
+
+  <ellipse cx="60" cy="225" rx="32" ry="16" class="attr-ellipse"/>
+  <text x="60" y="225" class="text-attr">Email</text>
+
+  <!-- ChuDe attributes -->
+  <ellipse cx="1140" cy="85" rx="38" ry="16" class="attr-ellipse"/>
+  <text x="1140" y="85" class="text-pk">MaChuDe</text>
+
+  <ellipse cx="1235" cy="85" rx="38" ry="16" class="attr-ellipse"/>
+  <text x="1235" y="85" class="text-attr">TenChuDe</text>
+
+  <ellipse cx="1310" cy="115" rx="40" ry="16" class="attr-ellipse"/>
+  <text x="1310" y="115" class="text-attr">MoTaChuDe</text>
+
+  <!-- Sach attributes -->
+  <ellipse cx="75" cy="430" rx="30" ry="15" class="attr-ellipse"/>
+  <text x="75" y="430" class="text-attr">ISBN</text>
+
+  <ellipse cx="95" cy="475" rx="42" ry="15" class="attr-ellipse"/>
+  <text x="95" y="475" class="text-attr">NhaXuatBan</text>
+
+  <ellipse cx="180" cy="475" rx="32" ry="15" class="attr-ellipse"/>
+  <text x="180" y="475" class="text-attr">SoTrang</text>
+
+  <ellipse cx="260" cy="445" rx="38" ry="15" class="attr-ellipse"/>
+  <text x="260" y="445" class="text-attr">LanTaiBan</text>
+
+  <!-- LuanVan attributes -->
+  <ellipse cx="300" cy="440" rx="52" ry="15" class="attr-ellipse"/>
+  <text x="300" y="440" class="text-attr">NguoiHuongDan</text>
+
+  <ellipse cx="355" cy="485" rx="32" ry="15" class="attr-ellipse"/>
+  <text x="355" y="485" class="text-attr">Truong</text>
+
+  <ellipse cx="430" cy="485" rx="38" ry="15" class="attr-ellipse"/>
+  <text x="430" y="485" class="text-attr">CapBaoVe</text>
+
+  <ellipse cx="505" cy="465" rx="44" ry="15" class="attr-ellipse"/>
+  <text x="505" y="465" class="text-attr">ChuyenNganh</text>
+
+  <ellipse cx="545" cy="425" rx="40" ry="15" class="attr-ellipse"/>
+  <text x="545" y="425" class="text-attr">DiemBaoVe</text>
+
+  <!-- VideoBaiGiang attributes -->
+  <ellipse cx="585" cy="440" rx="38" ry="15" class="attr-ellipse"/>
+  <text x="585" y="440" class="text-attr">ThoiLuong</text>
+
+  <ellipse cx="640" cy="480" rx="38" ry="15" class="attr-ellipse"/>
+  <text x="640" y="480" class="text-attr">DoPhanGiai</text>
+
+  <ellipse cx="725" cy="480" rx="50" ry="15" class="attr-ellipse"/>
+  <text x="725" y="480" class="text-attr">NgonNguPhuDe</text>
+
+  <ellipse cx="780" cy="440" rx="38" ry="15" class="attr-ellipse"/>
+  <text x="780" y="440" class="text-attr">DungLuong</text>
+
+  <!-- TaiLieuDienTu attributes -->
+  <ellipse cx="830" cy="440" rx="35" ry="15" class="attr-ellipse"/>
+  <text x="830" y="440" class="text-attr">DinhDang</text>
+
+  <ellipse cx="885" cy="485" rx="38" ry="15" class="attr-ellipse"/>
+  <text x="885" y="485" class="text-attr">DungLuong</text>
+
+  <ellipse cx="965" cy="485" rx="44" ry="15" class="attr-ellipse"/>
+  <text x="965" y="485" class="text-attr">QuyenTruyCap</text>
+
+  <ellipse cx="1025" cy="440" rx="45" ry="15" class="attr-ellipse"/>
+  <text x="1025" y="440" class="text-attr">URL_LienKet</text>
+
+  <!-- BanSao attributes -->
+  <ellipse cx="1255" cy="330" rx="40" ry="15" class="attr-ellipse"/>
+  <text x="1255" y="330" class="text-pk">MaBanSao</text>
+
+  <ellipse cx="1275" cy="370" rx="38" ry="15" class="attr-ellipse"/>
+  <text x="1275" y="370" class="text-attr">TrangThai</text>
+
+  <ellipse cx="1255" cy="415" rx="50" ry="15" class="attr-ellipse"/>
+  <text x="1255" y="415" class="text-attr">TinhTrangVatLy</text>
+
+  <ellipse cx="1185" cy="450" rx="35" ry="15" class="attr-ellipse"/>
+  <text x="1185" y="450" class="text-attr">ViTriKe</text>
+
+  <!-- PhieuMuon attributes -->
+  <ellipse cx="1135" cy="545" rx="36" ry="15" class="attr-ellipse"/>
+  <text x="1135" y="545" class="text-pk">MaPhieu</text>
+
+  <ellipse cx="1150" cy="590" rx="40" ry="15" class="attr-ellipse"/>
+  <text x="1150" y="590" class="text-attr">NgayMuon</text>
+
+  <ellipse cx="1145" cy="635" rx="42" ry="15" class="attr-ellipse"/>
+  <text x="1145" y="635" class="text-attr">NgayHanTra</text>
+
+  <ellipse cx="1090" cy="675" rx="52" ry="15" class="attr-ellipse"/>
+  <text x="1090" y="675" class="text-attr">NgayTraThucTe</text>
+
+  <ellipse cx="1015" cy="695" rx="35" ry="15" class="attr-ellipse"/>
+  <text x="1015" y="695" class="text-attr">TienPhat</text>
+
+  <ellipse cx="945" cy="710" rx="36" ry="15" class="attr-ellipse"/>
+  <text x="945" y="710" class="text-attr">TrangThai</text>
+
+  <ellipse cx="875" cy="705" rx="32" ry="15" class="attr-ellipse"/>
+  <text x="875" y="705" class="text-attr">GhiChu</text>
+
+  <!-- BanDoc attributes -->
+  <ellipse cx="115" cy="560" rx="40" ry="15" class="attr-ellipse"/>
+  <text x="115" y="560" class="text-pk">MaBanDoc</text>
+
+  <ellipse cx="95" cy="605" rx="32" ry="15" class="attr-ellipse"/>
+  <text x="95" y="605" class="text-attr">HoTen</text>
+
+  <ellipse cx="105" cy="655" rx="32" ry="15" class="attr-ellipse"/>
+  <text x="105" y="655" class="text-attr">Email</text>
+
+  <ellipse cx="150" cy="705" rx="42" ry="15" class="attr-ellipse"/>
+  <text x="150" y="705" class="text-attr">SoDienThoai</text>
+
+  <ellipse cx="230" cy="735" rx="44" ry="15" class="attr-ellipse"/>
+  <text x="230" y="735" class="text-attr">LoaiTaiKhoan</text>
+
+  <ellipse cx="320" cy="740" rx="44" ry="15" class="attr-ellipse"/>
+  <text x="320" y="740" class="text-attr">NgayHetHan</text>
+
+  <ellipse cx="410" cy="725" rx="52" ry="15" class="attr-ellipse"/>
+  <text x="410" y="725" class="text-attr">TaiKhoanBiKhoa</text>
+
+</svg>
