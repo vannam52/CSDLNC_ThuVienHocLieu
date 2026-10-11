@@ -23,82 +23,144 @@
 - **Câu hỏi nghiên cứu:** Cách biểu diễn các loại học liệu và các thuộc tính đa trị ảnh hưởng thế nào đến vấn đề dư thừa dữ liệu, hiệu suất truy vấn và khả năng mở rộng của hệ thống?
 - **Phạm vi quản lý:** Hệ thống quản lý Học liệu, tác giả, chủ đề (thuộc tính đa trị), bản sao sách vật lý, bạn đọc, luồng phiếu mượn trả và quyền truy cập học liệu.
 
-## ⚙️ 2. Sơ đồ Kiến trúc & Cách hoạt động (Workflow)
+## ⚙️ 2. Sơ đồ Kiến trúc & Dòng chảy Hoạt động (Workflow)
 
-Dự án được vận hành song song trên 2 hệ quản trị CSDL để phục vụ mục đích "So sánh" (Comparative Study) theo yêu cầu đồ án.
+Dự án được thiết kế theo kiến trúc phân tầng chuyên nghiệp, kết hợp tự động hóa giữa **Python**, **PostgreSQL** và **Java Console**:
 
 ```mermaid
-graph TD;
-    subgraph Bước 1: Triển khai CSDL
-        A[Python Script] -->|1. Khởi tạo Database & Bảng| B[(PostgreSQL)];
-        A -->|2. Fake Data| B;
+graph TD
+    subgraph GĐ 1: Thiết lập CSDL Tự động (Python & SQL)
+        P1["setup_library_management_db.py"] -->|1. Cấu trúc bảng 4NF & Kế thừa| S1["01_schema.sql"]
+        P1 -->|2. Nạp dữ liệu mẫu| S2["02_data_sample.sql"]
+        P1 -->|3. Nạp Procedure Khóa bi quan| S3["04_transaction_procedure.sql"]
+        S1 & S2 & S3 -->|Khởi tạo| PG[(PostgreSQL: library_management)]
+        P2["generate_mock_data.py"] -->|4. Bơm 2.000 Sách & 500 Bạn đọc| PG
     end
-    
-    subgraph Bước 2: Ứng dụng Java Console
-        C[Java Application] -->|JDBC / SQL| B;
-        C -->|JPA / OQL| D[(ObjectDB .odb)];
+
+    subgraph GĐ 2: Khởi động Ứng dụng & Cấu hình (Java)
+        RUN["run.bat / Maven"] --> MAIN["Main.java (Cấu hình UTF-8)"]
+        MAIN --> MENU["ConsoleMenuService.java<br/>(Điều phối Menu 0 - 7)"]
+        MENU --> CFG["DatabaseConfig.java<br/>(JDBC Connection)"]
+        CFG --> PG
     end
-    
-    B --> E[Đánh giá: Transaction, SQL 4NF, EXPLAIN ANALYZE];
-    D --> F[Đánh giá: Lập trình OQL, Ánh xạ Kế thừa];
+
+    subgraph GĐ 3: Thực thi 7 Chức năng Nghiên cứu (Tầng DAO)
+        MENU -->|Menu 1, 2, 3| DAO1["HocLieuDAO.java<br/>• WITH RECURSIVE (Cây chủ đề)<br/>• Chuẩn hóa 4NF đa trị<br/>• Thống kê lượt mượn"]
+        MENU -->|Menu 4, 5| DAO2["TransactionDAO.java<br/>• 2 Thread tranh chấp (FOR UPDATE)<br/>• Mô phỏng Lỗi & Rollback"]
+        MENU -->|Menu 6| DAO3["OqlQueryDAO.java<br/>• So sánh đối đầu SQL vs OQL<br/>• Truy vấn hướng đối tượng"]
+        MENU -->|Menu 7| DAO4["PerformanceDAO.java<br/>• Đo thời gian mili-giây (2.000 dòng)<br/>• Phân tích EXPLAIN ANALYZE"]
+        
+        DAO1 & DAO2 & DAO4 --> PG
+        DAO3 -.->|Đối chiếu mô hình| ODB[(ObjectDB: thuvien.odb)]
+    end
+
+    classDef db fill:#316192,stroke:#fff,stroke-width:2px,color:#fff;
+    classDef odb fill:#4CAF50,stroke:#fff,stroke-width:2px,color:#fff;
+    classDef py fill:#3776AB,stroke:#fff,stroke-width:1.5px,color:#fff;
+    classDef jv fill:#ED8B00,stroke:#fff,stroke-width:1.5px,color:#fff;
+    class PG db;
+    class ODB odb;
+    class P1,P2 py;
+    class MAIN,MENU,DAO1,DAO2,DAO3,DAO4 jv;
 ```
 
-**Cách hoạt động chi tiết:**
-1. Kịch bản Python `setup_library_management_db.py` sẽ đọc các file `01_schema.sql` và `02_data_sample.sql` để kết nối vào PostgreSQL, tạo các bảng (tuân thủ chuẩn hóa 4NF) và bơm dữ liệu mượn/trả mẫu.
-2. Ứng dụng Java Console đóng vai trò trung tâm xử lý logic. Thông qua các tuỳ chọn trên Menu, người dùng có thể kích hoạt các chức năng chạy ngầm (truy vấn SQL đệ quy, giả lập 2 luồng tranh chấp mượn sách bằng Pessimistic Locking).
-3. Ở tính năng số 6, ứng dụng Java không gọi PostgreSQL nữa mà gọi ObjectDB qua JPA, thực thi các câu lệnh **OQL (Object Query Language)** để chứng minh sự tiện lợi khi không cần `JOIN` bảng.
+---
 
-## 📂 3. Cấu trúc Mã nguồn
+## 📊 3. Sơ đồ Thực thể EER (Enhanced Entity-Relationship)
+Hệ thống được mô hình hóa theo đúng chuẩn học thuật môn Cơ sở dữ liệu Nâng cao:
+* **Lớp cha & Kế thừa (Class Table Inheritance):** `HocLieu` đóng vai trò lớp cha; 4 lớp con rời rạc (*Disjoint `d`*): `Sach`, `LuanVan`, `VideoBaiGiang`, `TaiLieuDienTu`.
+* **Thuộc tính đa trị (Chuẩn hóa 4NF):** `HocLieu - TacGia` (N:M) và `HocLieu - ChuDe` (N:M).
+* **Quan hệ đệ quy (Recursive Relationship):** `ChuDeCha` tự tham chiếu 1:N trên chính thực thể `ChuDe`.
+* **Luồng mượn trả & Giao dịch:** `HocLieu` (1:N) $\rightarrow$ `BanSao` (N:1) $\rightarrow$ `PhieuMuon` (1:N) $\leftarrow$ `BanDoc`.
+
+> 📁 **Tệp sơ đồ trong dự án:**
+> * **Tệp sơ đồ Vector EER:** [`SoDoEER.svg`](SoDoEER.svg)
+> * **Cách sử dụng:**
+>   * **Chèn vào Báo cáo Word / Slide:** Chọn *Insert > Pictures > This Device* chọn file `SoDoEER.svg` (giữ nguyên độ nét vector 100%, không bị vỡ hạt khi in).
+>   * **Xem, chỉnh sửa và xuất ảnh trên svgviewer.dev:** Truy cập [svgviewer.dev](https://www.svgviewer.dev/), kéo thả file `SoDoEER.svg` vào (hoặc dán code) để xem trước trực quan, chỉnh sửa văn bản trực tiếp và xuất ảnh PNG độ phân giải cao (2x/4x) phục vụ báo cáo.
+
+---
+
+## 📂 4. Cấu trúc Mã nguồn Dự án
 ```text
 CSDLNC_ThuVienHocLieu/
-├── src/                # Toàn bộ mã nguồn Java (Console App kết nối cả PostgreSQL & ObjectDB)
-│   ├── main/java       # Code DAO, Service, Models
-│   └── main/resources  # File cấu hình JPA (persistence.xml) và Script SQL chính thức
-├── docs/               # Chứa toàn bộ báo cáo phân tích, sơ đồ EER và So sánh (SQL vs OQL)
-├── scripts/            # Kịch bản Python tự động tạo Database, sinh Mock Data
-├── pom.xml             # Tệp cấu hình thư viện Maven (PostgreSQL Driver, ObjectDB)
-└── run.bat / mvn.cmd   # Script khởi chạy chương trình nhanh chóng
+├── SoDoEER.svg                 # Sơ đồ thực thể EER chuẩn Vector (Mở bằng svgviewer.dev / chèn vào Word)
+├── src/main/java/com/library/
+│   ├── Main.java               # Điểm bắt đầu (Entry point), cấu hình UTF-8 Console
+│   ├── config/
+│   │   └── DatabaseConfig.java # Cung cấp kết nối JDBC tới PostgreSQL
+│   ├── dao/
+│   │   ├── HocLieuDAO.java     # Xử lý SQL đệ quy (CTE), đa trị 4NF và thống kê
+│   │   ├── TransactionDAO.java # Mô phỏng 2 Thread tranh chấp (Locking) & Rollback
+│   │   ├── OqlQueryDAO.java    # Bảng so sánh đối đầu trực quan SQL vs OQL (ObjectDB)
+│   │   └── PerformanceDAO.java # Đo thời gian thực thi (ms) và EXPLAIN ANALYZE
+│   ├── model/                  # 10 Entities Java ánh xạ mô hình đối tượng
+│   └── service/
+│       └── ConsoleMenuService.java # Giao diện Menu tương tác người dùng (Menu 0-7)
+├── src/main/resources/
+│   ├── 01_schema.sql           # Khởi tạo bảng, khóa chính, khóa ngoại, kế thừa
+│   ├── 02_data_sample.sql      # Dữ liệu mẫu ban đầu (sách, bạn đọc, danh mục)
+│   └── 04_transaction_procedure.sql # Stored Procedure có khóa bi quan (FOR UPDATE)
+├── docs/                       # Toàn bộ tài liệu đặc tả, phân tích lý thuyết, so sánh SQL vs OQL
+├── scripts/
+│   ├── setup_library_management_db.py # Tự động tạo DB, Reset schema, chạy 3 file SQL
+│   └── generate_mock_data.py   # Tự động bơm 500 bạn đọc & 2.000 học liệu (Big Data)
+├── pom.xml                     # Quản lý thư viện Maven (PostgreSQL JDBC, ObjectDB JPA)
+└── run.bat / mvn.cmd           # Script khởi chạy chương trình nhanh chóng
 ```
 
-## 🚀 4. Hướng dẫn Khởi chạy và Kiểm thử
+---
 
-### Yêu cầu cấu hình môi trường:
-Để có thể chạy được dự án này (kể cả trên máy giáo viên), bạn cần chuẩn bị:
-1. **Java JDK 17+:** [Tải tại đây](https://www.oracle.com/java/technologies/javase/jdk17-archive-downloads.html). Chú ý cấu hình biến môi trường `JAVA_HOME`.
-2. **PostgreSQL 14+:** [Tải tại đây](https://www.postgresql.org/download/). (Mật khẩu user `postgres` mặc định để là `12345` cho đồng bộ, nếu máy thầy cô là mật khẩu khác, hãy sửa lại trong file `setup_library_management_db.py`).
-3. **Python 3.10+:** [Tải tại đây](https://www.python.org/downloads/). Dùng để chạy script tạo CSDL tự động.
-   - Cài thêm 2 thư viện phụ trợ cho Python: `pip install psycopg2 faker`
-4. **Apache Maven:** Đã được nhóm tích hợp sẵn file `mvn.cmd` vào mã nguồn nên không cần cài đặt ngoài.
+## 🚀 5. Hướng dẫn Khởi chạy và Kịch bản Kiểm thử
 
-### Quy trình khởi chạy dự án:
+### Yêu cầu môi trường:
+1. **Java JDK 17+:** Đã cấu hình biến môi trường `JAVA_HOME`.
+2. **PostgreSQL 14+:** Đang chạy dưới dạng Service (Tài khoản: `postgres` / Mật khẩu mặc định: `12345`).
+3. **Python 3.10+:** Cài đặt 2 thư viện hỗ trợ:
+   ```powershell
+   pip install psycopg2 faker
+   ```
 
-**Bước 1: Khởi tạo CSDL tự động bằng Python (Bắt buộc)**
-Mở Terminal (hoặc CMD/PowerShell) tại thư mục gốc của đồ án và chạy lệnh sau để tự tạo Database `library_management` và chèn các dữ liệu mẫu khớp với kịch bản test:
+---
+
+### Quy trình khởi chạy 3 bước:
+
+#### Bước 1: Khởi tạo CSDL tự động (Bắt buộc)
+Tại thư mục gốc dự án, chạy lệnh:
 ```powershell
 python scripts\setup_library_management_db.py
 ```
+*(Lệnh này tự động tạo database `library_management`, dọn sạch schema cũ và nạp cấu trúc 3 file SQL).*
 
-**Bước 2: Sinh dữ liệu khổng lồ - Big Data (Tuỳ chọn)**
-Để chứng minh cho giáo viên thấy kỹ thuật Đánh Chỉ Mục (Index) ở Menu số 7 hoạt động hiệu quả, hãy chạy thêm lệnh sau để bơm 10.000+ bản ghi giả lập vào DB:
+#### Bước 2: Nạp dữ liệu lớn - Big Data (Khuyên dùng)
+Chạy script sinh **500 Bạn đọc** và **2.000 Cuốn sách** ngẫu nhiên phục vụ kiểm thử hiệu năng:
 ```powershell
 python scripts\generate_mock_data.py
 ```
 
-**Bước 3: Biên dịch và Chạy ứng dụng Java Console**
-Gõ 2 lệnh sau để Maven tự động tải thư viện (PostgreSQL Driver, ObjectDB) và chạy chương trình chính:
+#### Bước 3: Biên dịch và Khởi chạy ứng dụng Java Console
 ```powershell
 .\mvn.cmd clean compile
 .\run.bat
 ```
 
-**Bước 4: Kịch bản Kiểm thử qua Menu (Kịch bản "ăn điểm")**
-Khi màn hình Console hiện lên, hãy biểu diễn cho giáo viên theo các Menu đắt giá nhất sau:
-- **Chọn Menu 3:** Thể hiện các câu lệnh SQL siêu khó (`WITH RECURSIVE` đệ quy danh mục, `GROUP BY ... HAVING`).
-- **Chọn Menu 4 & 5:** Kích hoạt chức năng Transaction 2 luồng tranh chấp nhau mượn sách. Báo cáo sẽ chứng minh được tính chất ACID bằng khóa bi quan (Pessimistic Locking `FOR UPDATE`).
-- **Chọn Menu 6:** Thực thi OQL (Object Query Language) để truy xuất dữ liệu kế thừa không cần dùng lệnh `JOIN` như SQL, chứng minh tính ưu việt của CSDL Đối tượng.
-- **Chọn Menu 7:** Chạy báo cáo đo lường chi phí `EXPLAIN ANALYZE` bằng Mili-giây để so sánh tốc độ quét Seq Scan vs Index Scan.
+---
 
-## 📚 5. Tài liệu tham khảo
-1. **Fundamentals of Database Systems:** Đọc Chương 4 về EER, Chương 12 về CSDL đối tượng và Chương 15 về thuật toán thiết kế, các phụ thuộc nâng cao. [pearson.com](https://www.pearson.com)
-2. **Database System Concepts – bài giảng:** Sử dụng phần *Relational Database Design* để nghiên cứu phụ thuộc và chuẩn hóa. slides
-3. **ObjectDB – Developer's Guide:** Tham khảo nếu nhóm triển khai thêm bản mẫu lưu trữ đối tượng. [ObjectDB](https://www.objectdb.com)
+### 🎯 Kịch bản Demo 7 Chức năng "Ăn điểm" trước Giảng viên:
+
+Khi ứng dụng Console xuất hiện, bạn lần lượt demo theo các tính năng trọng tâm sau:
+
+* **Chọn Menu 1:** Tra cứu danh mục chủ đề phân cấp bằng truy vấn đệ quy **`WITH RECURSIVE`** trong PostgreSQL.
+* **Chọn Menu 2:** Truy vấn học liệu có nhiều chủ đề $\rightarrow$ Minh chứng kỹ thuật tách bảng trung gian chuẩn hóa **4NF**.
+* **Chọn Menu 3:** Thống kê số lượt mượn học liệu $\rightarrow$ Minh chứng hàm tổng hợp `COUNT()`, `GROUP BY`, `ORDER BY`.
+* **Chọn Menu 4 (Trọng tâm):** Mô phỏng **2 Thread độc lập** cùng mượn 1 cuốn sách tại cùng 1 thời điểm $\rightarrow$ Minh chứng cơ chế **Khóa bi quan (Pessimistic Locking `SELECT ... FOR UPDATE`)**, chỉ 1 người mượn thành công, người còn lại bị chặn (chống Lost Update / Race Condition).
+* **Chọn Menu 5:** Mô phỏng lỗi khi thực hiện giao dịch $\rightarrow$ Minh chứng cơ chế **`ROLLBACK`**, trạng thái sách được hoàn trả nguyên vẹn là `San sang` (Đảm bảo tính chất Atomicity trong ACID).
+* **Chọn Menu 6 (Trọng tâm):** Bảng so sánh đối đầu trực quan giữa **SQL (PostgreSQL)** và **OQL (ObjectDB)** $\rightarrow$ Chứng minh OQL duyệt kế thừa và collection bằng dấu chấm (`.`) mà **hoàn toàn không cần `JOIN`**, giải quyết bài toán Lệch pha trở kháng (*Impedance Mismatch*).
+* **Chọn Menu 7:** Thực hiện truy vấn tìm kiếm trên **2.000 dòng dữ liệu** $\rightarrow$ Đo lường thời gian (ms) và xuất kế hoạch thực thi **`EXPLAIN ANALYZE`** để đánh giá hiệu năng.
+
+---
+
+## 📚 6. Tài liệu tham khảo
+1. **Fundamentals of Database Systems (Elmasri & Navathe):** Chương 4 (Mô hình EER), Chương 12 (CSDL Đối tượng), Chương 15 (Chuẩn hóa 4NF).
+2. **Database System Concepts (Silberschatz, Korth, Sudarshan):** Chương về Thiết kế CSDL Quan hệ và Quản lý Giao dịch đồng thời (Concurrency Control).
+3. **ObjectDB Developer's Guide:** Tài liệu hướng dẫn truy vấn OQL / JPQL trên Cơ sở dữ liệu Hướng đối tượng [objectdb.com](https://www.objectdb.com).
