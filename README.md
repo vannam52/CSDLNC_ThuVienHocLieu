@@ -29,29 +29,33 @@ Dự án được thiết kế theo kiến trúc phân tầng chuyên nghiệp, 
 
 ```mermaid
 graph TD
-    subgraph GĐ 1: Thiết lập CSDL Tự động (Python & SQL)
-        P1["setup_library_management_db.py"] -->|1. Cấu trúc bảng 4NF & Kế thừa| S1["01_schema.sql"]
+    subgraph GD1 ["Giai đoạn 1: Thiết lập CSDL Tự động (Python và SQL)"]
+        P1["setup_library_management_db.py"] -->|1. Cấu trúc bảng 4NF và Kế thừa| S1["01_schema.sql"]
         P1 -->|2. Nạp dữ liệu mẫu| S2["02_data_sample.sql"]
         P1 -->|3. Nạp Procedure Khóa bi quan| S3["04_transaction_procedure.sql"]
-        S1 & S2 & S3 -->|Khởi tạo| PG[(PostgreSQL: library_management)]
-        P2["generate_mock_data.py"] -->|4. Bơm 2.000 Sách & 500 Bạn đọc| PG
+        S1 --> PG[("PostgreSQL: library_management")]
+        S2 --> PG
+        S3 --> PG
+        P2["generate_mock_data.py"] -->|4. Bơm 2.000 Sách và 500 Bạn đọc| PG
     end
 
-    subgraph GĐ 2: Khởi động Ứng dụng & Cấu hình (Java)
+    subgraph GD2 ["Giai đoạn 2: Khởi động Ứng dụng và Cấu hình (Java)"]
         RUN["run.bat / Maven"] --> MAIN["Main.java (Cấu hình UTF-8)"]
         MAIN --> MENU["ConsoleMenuService.java<br/>(Điều phối Menu 0 - 7)"]
         MENU --> CFG["DatabaseConfig.java<br/>(JDBC Connection)"]
         CFG --> PG
     end
 
-    subgraph GĐ 3: Thực thi 7 Chức năng Nghiên cứu (Tầng DAO)
+    subgraph GD3 ["Giai đoạn 3: Thực thi 7 Chức năng Nghiên cứu (Tầng DAO)"]
         MENU -->|Menu 1, 2, 3| DAO1["HocLieuDAO.java<br/>• WITH RECURSIVE (Cây chủ đề)<br/>• Chuẩn hóa 4NF đa trị<br/>• Thống kê lượt mượn"]
-        MENU -->|Menu 4, 5| DAO2["TransactionDAO.java<br/>• 2 Thread tranh chấp (FOR UPDATE)<br/>• Mô phỏng Lỗi & Rollback"]
+        MENU -->|Menu 4, 5| DAO2["TransactionDAO.java<br/>• 2 Thread tranh chấp (FOR UPDATE)<br/>• Mô phỏng Lỗi và Rollback"]
         MENU -->|Menu 6| DAO3["OqlQueryDAO.java<br/>• So sánh đối đầu SQL vs OQL<br/>• Truy vấn hướng đối tượng"]
         MENU -->|Menu 7| DAO4["PerformanceDAO.java<br/>• Đo thời gian mili-giây (2.000 dòng)<br/>• Phân tích EXPLAIN ANALYZE"]
         
-        DAO1 & DAO2 & DAO4 --> PG
-        DAO3 -.->|Đối chiếu mô hình| ODB[(ObjectDB: thuvien.odb)]
+        DAO1 --> PG
+        DAO2 --> PG
+        DAO4 --> PG
+        DAO3 -.->|Đối chiếu mô hình| ODB[("ObjectDB: thuvien.odb")]
     end
 
     classDef db fill:#316192,stroke:#fff,stroke-width:2px,color:#fff;
