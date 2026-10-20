@@ -34,7 +34,13 @@ public class ConsoleMenuService {
 
             int choice = -1;
             try {
-                choice = Integer.parseInt(scanner.nextLine());
+                if (!scanner.hasNextLine()) {
+                    System.out.println("Đã kết thúc phiên làm việc.");
+                    return;
+                }
+                String line = scanner.nextLine().trim();
+                if (line.isEmpty()) continue;
+                choice = Integer.parseInt(line);
             } catch (Exception e) {
                 System.out.println("Lựa chọn không hợp lệ!");
                 continue;

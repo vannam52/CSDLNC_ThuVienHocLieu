@@ -13,19 +13,19 @@ DB_CONFIG = {
     'port': '5432'
 }
 
-def generate_data(num_books=2000, num_readers=500):
+def generate_data(num_books=100, num_readers=50):
     try:
         conn = psycopg2.connect(**DB_CONFIG)
         cur = conn.cursor()
         print(f"✅ Đang kết nối tới Database 'library_management'...")
-        print(f"🚀 Bắt đầu sinh Big Data: {num_readers} Bạn Đọc và {num_books} Học Liệu...")
+        print(f"🚀 Bắt đầu sinh dữ liệu mẫu: {num_readers} Bạn Đọc và {num_books} Học Liệu...")
 
-        # 1. Sinh Bạn Đọc
+        # 1. Sinh Bạn Đọc (50 bạn đọc, mã từ BD_M_001 đến BD_M_050)
         inserted_readers = 0
         for i in range(1, num_readers + 1):
-            ma_bd = f"BD_M_{i:04d}"
+            ma_bd = f"BD_M_{i:03d}"
             hoten = fake.name()
-            email = f"user_{i}_{random.randint(1000, 99999)}@thuvien.edu.vn"
+            email = f"user_{i}_{random.randint(100, 999)}@thuvien.edu.vn"
             sdt = f"09{random.randint(10000000, 99999999)}"
             matkhau = "123456"
             loai_tk = random.choice(["Sinh vien", "Giang vien", "Khach"])
@@ -40,7 +40,7 @@ def generate_data(num_books=2000, num_readers=500):
 
         print(f"✅ Đã nạp thành công {inserted_readers} Bạn Đọc mới!")
 
-        # 2. Sinh Học Liệu & Sách
+        # 2. Sinh Học Liệu & Sách (100 cuốn sách, mã từ HL_M_001 đến HL_M_100)
         topics = [
             "Lập trình Java nâng cao", "Hệ quản trị CSDL PostgreSQL", "Thiết kế CSDL quan hệ",
             "Database Systems and Architecture", "Distributed Database Management",
@@ -50,18 +50,18 @@ def generate_data(num_books=2000, num_readers=500):
 
         inserted_books = 0
         for i in range(1, num_books + 1):
-            ma_hl = f"HL_M_{i:04d}"
+            ma_hl = f"HL_M_{i:03d}"
             
             # 25% sách có chứa từ khóa 'Database' để phục vụ test Menu 7
             if random.random() < 0.25:
-                tieude = f"Giao trinh Database - Tap {random.randint(1, 10)} - {fake.word().capitalize()}"
+                tieude = f"Giao trinh Database - Tap {random.randint(1, 5)} - {fake.word().capitalize()}"
             else:
                 tieude = f"{random.choice(topics)} - Tap {random.randint(1, 5)}"
 
             mota = "Tai lieu hoc tap nghien cuu chuyen sau cho sinh vien"
-            namxb = random.randint(2015, 2025)
+            namxb = random.randint(2018, 2025)
             ngonngu = random.choice(["Tieng Viet", "Tieng Anh"])
-            giatien = random.randint(80, 800) * 1000.0
+            giatien = random.randint(80, 500) * 1000.0
 
             cur.execute("""
                 INSERT INTO HocLieu (MaHocLieu, TieuDe, MoTa, NamXuatBan, NgonNgu, GiaTien, NgayNhapKho)
@@ -71,8 +71,8 @@ def generate_data(num_books=2000, num_readers=500):
 
             isbn = f"978-604-{random.randint(100, 999)}-{random.randint(1000, 9999)}-{i % 9}"
             nhaxb = random.choice(["NXB Giao Duc", "NXB Thong Tin & Truyen Thong", "NXB Dai Hoc Quoc Gia", "Springer", "O'Reilly"])
-            sotrang = random.randint(150, 1200)
-            lantaiban = random.randint(1, 6)
+            sotrang = random.randint(150, 800)
+            lantaiban = random.randint(1, 4)
 
             cur.execute("""
                 INSERT INTO Sach (MaHocLieu, ISBN, NhaXuatBan, SoTrang, LanTaiBan)
@@ -80,11 +80,11 @@ def generate_data(num_books=2000, num_readers=500):
                 ON CONFLICT (MaHocLieu) DO NOTHING;
             """, (ma_hl, isbn, nhaxb, sotrang, lantaiban))
 
-            # Sinh Bản sao cho sách (Tránh dùng dấu % trong chuỗi text SQL của psycopg2)
-            ma_bansao = f"BS_M_{i:04d}"
+            # Sinh Bản sao cho sách
+            ma_bansao = f"BS_M_{i:03d}"
             cur.execute("""
                 INSERT INTO BanSao (MaBanSao, MaHocLieu, TrangThai, TinhTrangVatLy, ViTriKe)
-                VALUES (%s, %s, 'San sang', 'Moi tinh', 'Ke BigData')
+                VALUES (%s, %s, 'San sang', 'Moi tinh', 'Ke Sach')
                 ON CONFLICT (MaBanSao) DO NOTHING;
             """, (ma_bansao, ma_hl))
 
@@ -95,10 +95,11 @@ def generate_data(num_books=2000, num_readers=500):
         conn.commit()
         cur.close()
         conn.close()
-        print("\n🎉 HOÀN TẤT 100%! CSDL 'library_management' hiện đã có hàng ngàn bản ghi sẵn sàng để test Menu 7 (Đo hiệu năng)!")
+        print("\n🎉 HOÀN TẤT 100%! CSDL 'library_management' đã có đủ dữ liệu sẵn sàng để test!")
 
     except Exception as e:
         print(f"❌ Lỗi: {e}")
 
 if __name__ == '__main__':
-    generate_data(num_books=2000, num_readers=500)
+    generate_data(num_books=100, num_readers=50)
+

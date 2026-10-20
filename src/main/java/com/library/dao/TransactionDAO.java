@@ -17,6 +17,9 @@ public class TransactionDAO {
         System.out.println("Phiên 1 và Phiên 2 cùng gọi sp_MuonSach mượn bản sao: " + maBanSao);
         System.out.println("------------------------------------------------------------------");
 
+        // Tự động khôi phục môi trường test: Đưa bản sao về 'San sang' và dọn phiếu cũ để có thể chạy lại nhiều lần
+        resetBanSaoState(maBanSao);
+
         CountDownLatch readyLatch = new CountDownLatch(1);
         CountDownLatch finishLatch = new CountDownLatch(2);
 
@@ -105,6 +108,21 @@ public class TransactionDAO {
         System.out.println("5. Trạng thái BS02 sau khi Rollback: " + getStatus(testBanSao));
         System.out.println("=> Kết luận: Dữ liệu đã được khôi phục nguyên vẹn!");
         System.out.println("------------------------------------------------------------------");
+    }
+
+    private void resetBanSaoState(String maBanSao) {
+        try (Connection conn = DatabaseConfig.getConnection()) {
+            try (PreparedStatement stmt = conn.prepareStatement("DELETE FROM PhieuMuon WHERE MaPhieu IN ('PM_PHIEN_1', 'PM_PHIEN_2', 'PM_ERR') OR MaBanSao = ?")) {
+                stmt.setString(1, maBanSao);
+                stmt.executeUpdate();
+            }
+            try (PreparedStatement stmt = conn.prepareStatement("UPDATE BanSao SET TrangThai = 'San sang' WHERE MaBanSao = ?")) {
+                stmt.setString(1, maBanSao);
+                stmt.executeUpdate();
+            }
+        } catch (SQLException e) {
+            // Bỏ qua lỗi reset nếu có
+        }
     }
 
     private String getStatus(String maBanSao) {

@@ -17,8 +17,8 @@ Hệ thống kịch bản Python được dùng để **Tự động hóa (Autom
 ### 2. File `generate_mock_data.py`
 - **Vai trò:** Hỗ trợ thực nghiệm "Đo lường hiệu năng".
 - **Tính năng cốt lõi:** 
-  - Sử dụng thư viện `Faker` của Python để tự động sinh ra hàng vạn (Big Data) thông tin Tác giả, Sách, Bạn đọc ngẫu nhiên.
-  - Phục vụ trực tiếp cho **Menu số 7** của Java: Dùng dữ liệu cực lớn này để chứng minh truy vấn dùng **Chỉ mục (Index GIN/Trigram)** nhanh hơn truy vấn tuần tự (Seq Scan) bao nhiêu mili-giây.
+  - Sử dụng thư viện `Faker` của Python để tự động sinh ra dữ liệu mẫu (100 Học liệu/Sách và 50 Bạn đọc) một cách nhanh chóng và gọn nhẹ.
+  - Phục vụ trực tiếp cho **Menu số 7** của Java: Cung cấp đủ dữ liệu để chứng minh trình tối ưu truy vấn (Query Optimizer) của PostgreSQL và so sánh sự khác biệt khi sử dụng **Chỉ mục (Index)** so với quét tuần tự (Seq Scan).
 
 ### 3. File `test_transaction.py`
 - **Vai trò:** Bản nguyên mẫu (Prototype) cho kịch bản Tranh chấp.

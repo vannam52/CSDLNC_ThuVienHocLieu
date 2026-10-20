@@ -121,3 +121,49 @@ Trường Đại học triển khai hệ thống **Thư viện Học liệu Đa 
 3. **Có mối quan hệ Đệ quy (Self-relationship):** Học liệu cha chứa học liệu con, phục vụ xuất sắc cho câu lệnh **Recursive CTE (WITH RECURSIVE)** trong bài tập lớn.
 4. **Có giải quyết bài toán giao dịch đồng thời:** Thực thể `BanSao` + `PhieuMuon` với kịch bản tranh chấp khóa **Pessimistic Locking**.
 5. **Có mô hình hóa An toàn thông tin & Dữ liệu lớn:** `QuyenTruyCap` (phân quyền DRM) và `NhatKyTruyCap` (Audit Log truy vết hành vi người dùng).
+
+---
+
+## PHẦN VI: MINH CHỨNG PHỤ THUỘC ĐA TRỊ & PHÂN RÃ CHUẨN 4NF (THEO ĐỀ CƯƠNG)
+
+### 1. Phân tích Phụ thuộc Đa trị (Multivalued Dependency - MVD)
+* Giả sử ta gom chung tất cả thuộc tính đa trị vào 1 bảng duy nhất: `HocLieu_ChuaChuanHoa(MaHocLieu, TacGia, ChuDe)`.
+* **Giả định nghiệp vụ:** Tập tác giả và tập chủ đề là **hoàn toàn độc lập** với nhau. Một cuốn sách có nhiều tác giả đồng sáng tác và cuốn sách đó có thể phân loại vào nhiều chủ đề nghiên cứu. Tác giả A không chỉ định hay giới hạn chủ đề nào.
+* **Tồn tại 2 phụ thuộc đa trị (MVD):**
+  $$MaHocLieu \twoheadrightarrow TacGia$$
+  $$MaHocLieu \twoheadrightarrow ChuDe$$
+
+### 2. Ví dụ Dữ liệu chứng minh dư thừa trước phân rã 4NF (Tích Descartes)
+Xét cuốn sách `HL01` có 2 tác giả (*"Silberschatz"*, *"Elmasri"*) và 2 chủ đề (*"Cơ sở dữ liệu"*, *"Lập trình"*). Bảng trước phân rã bắt buộc phải lưu $2 \times 2 = 4$ bản ghi lặp lại:
+
+| MaHocLieu | TacGia | ChuDe | Nhận xét bất thường (Anomaly) |
+| :--- | :--- | :--- | :--- |
+| **HL01** | Silberschatz | Cơ sở dữ liệu | Cặp (Tác giả, Chủ đề) bị nhân tích Descartes |
+| **HL01** | Silberschatz | Lập trình | Dư thừa thông tin tác giả |
+| **HL01** | Elmasri | Cơ sở dữ liệu | Dư thừa thông tin chủ đề |
+| **HL01** | Elmasri | Lập trình | Nếu thêm 1 chủ đề mới, bắt buộc phải chèn thêm 2 dòng mới cho cả 2 tác giả |
+
+*Hậu quả:* Gây dị thường thêm/xóa/sửa (Insertion/Deletion/Update Anomaly) và lãng phí dung lượng lưu trữ nghiêm trọng.
+
+### 3. Phân rã về Dạng Chuẩn 4 (4NF)
+Để đạt chuẩn 4NF, ta phân rã bảng trên thành 2 quan hệ độc lập:
+1. **$R_1$ (`HocLieu_TacGia`):** `(MaHocLieu, MaTacGia)` &mdash; Lưu danh sách tác giả của từng học liệu.
+2. **$R_2$ (`HocLieu_ChuDe`):** `(MaHocLieu, MaChuDe)` &mdash; Lưu danh sách chủ đề của từng học liệu.
+
+*Dữ liệu sau phân rã:*
+* Bảng $R_1$: `(HL01, Silberschatz)`, `(HL01, Elmasri)` &rarr; Chỉ mất 2 dòng.
+* Bảng $R_2$: `(HL01, CSDL)`, `(HL01, LapTrinh)` &rarr; Chỉ mất 2 dòng.
+* $\rightarrow$ **Triệt tiêu hoàn toàn sự dư thừa** từ cấp số nhân $N \times M$ về phép cộng $N + M$.
+
+### 4. Kết quả Phép nối khôi phục đúng thông tin (Lossless-Join)
+Khi cần hiển thị lại toàn bộ thông tin ban đầu, ta thực hiện phép nối tự nhiên:
+$$R = R_1 \bowtie_{MaHocLieu} R_2$$
+
+```sql
+SELECT r1.MaHocLieu, r1.MaTacGia, r2.MaChuDe
+FROM HocLieu_TacGia r1
+JOIN HocLieu_ChuDe r2 ON r1.MaHocLieu = r2.MaHocLieu
+WHERE r1.MaHocLieu = 'HL01';
+```
+*Kết quả phép nối khôi phục chính xác 100% các dòng dữ liệu ban đầu mà **không làm phát sinh bất kỳ dòng dữ liệu giả nào (No Spurious Tuples)**. Điều này chứng minh quá trình phân rã đạt chuẩn 4NF và bảo toàn thông tin tuyệt đối.*
+

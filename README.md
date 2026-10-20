@@ -36,7 +36,7 @@ graph TD
         S1 --> PG[("PostgreSQL: library_management")]
         S2 --> PG
         S3 --> PG
-        P2["generate_mock_data.py"] -->|4. Bơm 2.000 Sách và 500 Bạn đọc| PG
+        P2["generate_mock_data.py"] -->|4. Bơm 100 Sách và 50 Bạn đọc| PG
     end
 
     subgraph GD2 ["Giai đoạn 2: Khởi động Ứng dụng và Cấu hình (Java)"]
@@ -50,7 +50,7 @@ graph TD
         MENU -->|Menu 1, 2, 3| DAO1["HocLieuDAO.java<br/>• WITH RECURSIVE (Cây chủ đề)<br/>• Chuẩn hóa 4NF đa trị<br/>• Thống kê lượt mượn"]
         MENU -->|Menu 4, 5| DAO2["TransactionDAO.java<br/>• 2 Thread tranh chấp (FOR UPDATE)<br/>• Mô phỏng Lỗi và Rollback"]
         MENU -->|Menu 6| DAO3["OqlQueryDAO.java<br/>• So sánh đối đầu SQL vs OQL<br/>• Truy vấn hướng đối tượng"]
-        MENU -->|Menu 7| DAO4["PerformanceDAO.java<br/>• Đo thời gian mili-giây (2.000 dòng)<br/>• Phân tích EXPLAIN ANALYZE"]
+        MENU -->|Menu 7| DAO4["PerformanceDAO.java<br/>• Đo thời gian & EXPLAIN ANALYZE<br/>• So sánh Seq Scan vs GIN Index"]
         
         DAO1 --> PG
         DAO2 --> PG
@@ -108,22 +108,62 @@ CSDLNC_ThuVienHocLieu/
 ├── docs/                       # Toàn bộ tài liệu đặc tả, phân tích lý thuyết, so sánh SQL vs OQL
 ├── scripts/
 │   ├── setup_library_management_db.py # Tự động tạo DB, Reset schema, chạy 3 file SQL
-│   └── generate_mock_data.py   # Tự động bơm 500 bạn đọc & 2.000 học liệu (Big Data)
-├── pom.xml                     # Quản lý thư viện Maven (PostgreSQL JDBC, ObjectDB JPA)
-└── run.bat / mvn.cmd           # Script khởi chạy chương trình nhanh chóng
+│   ├── generate_mock_data.py          # Tự động nạp 50 bạn đọc & 100 học liệu (nhẹ, nhanh)
+│   └── test_transaction.py            # Kịch bản Prototype kiểm thử tranh chấp đa luồng
+├── pom.xml                            # Quản lý thư viện Maven (PostgreSQL JDBC, ObjectDB JPA)
+└── run.bat / mvn.cmd                  # Script khởi chạy chương trình (nhận diện động)
 ```
 
 ---
 
 ## 🚀 5. Hướng dẫn Khởi chạy và Kịch bản Kiểm thử
 
-### Yêu cầu môi trường:
-1. **Java JDK 17+:** Đã cấu hình biến môi trường `JAVA_HOME`.
-2. **PostgreSQL 14+:** Đang chạy dưới dạng Service (Tài khoản: `postgres` / Mật khẩu mặc định: `12345`).
-3. **Python 3.10+:** Cài đặt 2 thư viện hỗ trợ:
-   ```powershell
-   pip install psycopg2 faker
-   ```
+### Yêu cầu môi trường & Lệnh cài đặt nhanh qua Terminal:
+
+Để máy tính (kể cả máy của giảng viên hoặc thành viên khác) chạy được dự án, bạn có thể cài đặt nhanh toàn bộ công cụ bằng các lệnh sau trong PowerShell/CMD:
+
+#### 1. Cài đặt Apache Maven (Chính xác phiên bản 3.9.9 bằng lệnh Terminal)
+* **Cách 1: Dùng Windows Package Manager (`winget` - Khuyên dùng):**
+  ```powershell
+  winget install Apache.Maven --version 3.9.9
+  ```
+* **Cách 2: Tải và giải nén trực tiếp Apache Maven 3.9.9 bằng PowerShell:**
+  ```powershell
+  curl.exe -L -o apache-maven-3.9.9-bin.zip https://archive.apache.org/dist/maven/maven-3/3.9.9/binaries/apache-maven-3.9.9-bin.zip
+  tar -xf apache-maven-3.9.9-bin.zip
+  ```
+* **Cách 3: Dùng Chocolatey (nếu máy có sẵn `choco`):**
+  ```powershell
+  choco install maven --version=3.9.9
+  ```
+* **Kiểm tra sau khi cài:** Tắt Terminal và mở lại, gõ lệnh:
+  ```powershell
+  mvn -v
+  ```
+  *(Kết quả hiện thông tin `Apache Maven 3.9.9` là đã thành công 100%).*
+
+#### 2. Cài đặt Java JDK 17+ (Bằng lệnh Terminal)
+* **Cài đặt qua winget:**
+  ```powershell
+  winget install EclipseAdoptium.Temurin.17.JDK
+  # hoặc: winget install Oracle.JDK.17
+  ```
+* **Kiểm tra:**
+  ```powershell
+  java -version
+  ```
+
+#### 3. Cài đặt PostgreSQL 14+ & Dịch vụ CSDL
+* **Cài đặt qua winget:**
+  ```powershell
+  winget install PostgreSQL.PostgreSQL.16
+  ```
+* *Lưu ý cấu hình:* Đảm bảo PostgreSQL Service đang chạy với tài khoản `postgres`, mật khẩu mặc định là `12345` và cổng `5432`.
+
+#### 4. Cài đặt thư viện Python hỗ trợ
+```powershell
+pip install psycopg2 faker
+```
 
 ---
 
@@ -136,15 +176,20 @@ python scripts\setup_library_management_db.py
 ```
 *(Lệnh này tự động tạo database `library_management`, dọn sạch schema cũ và nạp cấu trúc 3 file SQL).*
 
-#### Bước 2: Nạp dữ liệu lớn - Big Data (Khuyên dùng)
-Chạy script sinh **500 Bạn đọc** và **2.000 Cuốn sách** ngẫu nhiên phục vụ kiểm thử hiệu năng:
+#### Bước 2: Nạp dữ liệu mẫu - Mock Data (Khuyên dùng)
+Chạy script sinh **50 Bạn đọc** và **100 Cuốn sách** ngẫu nhiên (mã từ `001` đến `100`, vừa đủ gọn nhẹ để demo và test Menu 7 tìm kiếm từ khóa `Database`):
 ```powershell
 python scripts\generate_mock_data.py
 ```
 
 #### Bước 3: Biên dịch và Khởi chạy ứng dụng Java Console
+Bạn có thể dùng lệnh Maven trực tiếp hoặc file kịch bản `run.bat` có sẵn:
 ```powershell
-.\mvn.cmd clean compile
+# Biên dịch dự án:
+mvn clean compile
+# (hoặc: .\mvn.cmd clean compile)
+
+# Khởi chạy ứng dụng:
 .\run.bat
 ```
 

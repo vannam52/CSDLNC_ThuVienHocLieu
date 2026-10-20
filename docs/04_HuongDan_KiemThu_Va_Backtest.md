@@ -57,9 +57,27 @@ Khi thuyết trình/demo, hãy chia đôi màn hình: Một bên là Terminal ch
     4. Bấm nút **Play (Execute/Refresh)** hình tam giác trên thanh công cụ của pgAdmin4 (hoặc nhấn phím **F5**).
     5. **So sánh:** Nhìn xuống bảng Data Output của pgAdmin4, bạn sẽ thấy kết quả bảng hiển thị y hệt như những gì Java vừa in ra ở Terminal. Điều này chứng minh chức năng Java đã gọi đúng lệnh SQL đệ quy.
 
-### 2. Menu 2 & 3 - Chuẩn hóa 4NF (Đa trị)
+### 2. Menu 2 & 3 - Chuẩn hóa 4NF (Đa trị) và Thống kê lượt mượn
 *   **Thao tác Java:** Gõ `2` (Tìm học liệu đa chủ đề) hoặc gõ `3` (Thống kê lượt mượn). 
-*   **Giải thích:** Chứng minh dữ liệu đa trị đã được tách thành bảng trung gian (`HocLieu_ChuDe`, `PhieuMuon`).
+*   **Backtest trên pgAdmin4:**
+    *   *Đối chiếu Menu 2 (Học liệu đa chủ đề - Chuẩn 4NF):*
+        ```sql
+        SELECT h.MaHocLieu, h.TieuDe, COUNT(hc.MaChuDe) AS SoLuongChuDe
+        FROM HocLieu h
+        JOIN HocLieu_ChuDe hc ON h.MaHocLieu = hc.MaHocLieu
+        GROUP BY h.MaHocLieu, h.TieuDe
+        HAVING COUNT(hc.MaChuDe) > 1;
+        ```
+    *   *Đối chiếu Menu 3 (Thống kê lượt mượn theo từng học liệu):*
+        ```sql
+        SELECT h.MaHocLieu, h.TieuDe, COUNT(p.MaPhieu) AS LuotMuon
+        FROM HocLieu h
+        JOIN BanSao b ON h.MaHocLieu = b.MaHocLieu
+        JOIN PhieuMuon p ON b.MaBanSao = p.MaBanSao
+        GROUP BY h.MaHocLieu, h.TieuDe
+        ORDER BY LuotMuon DESC;
+        ```
+*   **Giải thích:** Chứng minh dữ liệu đa trị đã được tách thành bảng trung gian (`HocLieu_ChuDe`, `PhieuMuon`), kết quả Java in ra khớp 100% với pgAdmin4.
 
 ### 3. Menu 4 - Transaction: Tranh chấp mượn sách (Pessimistic Locking)
 *   **Thao tác Java:** Gõ `4`. Ứng dụng sẽ giả lập 2 luồng (2 sinh viên) bấm mượn cuốn sách `BS01` ở cùng một phần nghìn giây.
@@ -83,6 +101,9 @@ Khi thuyết trình/demo, hãy chia đôi màn hình: Một bên là Terminal ch
 *   **Thao tác Java:** Gõ `6`. Hệ thống chuyển sang thao tác với file `thuvien.odb` bằng ngôn ngữ hướng đối tượng. Không dùng lệnh `JOIN` nào của SQL.
 *   **Giải thích:** Đối chiếu mã nguồn file `OqlQueryDAO.java` với `HocLieuDAO.java` để thấy sự gọn gàng và tránh được vấn đề "Lệch pha trở kháng" (Impedance Mismatch).
 
-### 6. Menu 7 - Thực nghiệm Hiệu năng Index
-*   **Thao tác Java:** Gõ `7`. Chức năng này đo thời gian query bằng mili-giây và in ra `EXPLAIN ANALYZE` trực tiếp lên màn hình Console. 
-*   **Giải thích:** Kết quả in ra chứng minh chi phí truy vấn (cost) trước và sau khi đánh index (Dùng để bổ sung vào báo cáo Word).
+### 6. Menu 7 - Thực nghiệm Hiệu năng Index (GIN Trigram)
+*   **Thao tác Java:** Gõ `7`. Hệ thống sẽ chạy so sánh song song 2 trường hợp:
+    1. **Trường hợp 1 (Sequential Scan):** Quét tuần tự toàn bộ bảng (chi phí `cost` và thời gian cao).
+    2. **Trường hợp 2 (Bitmap Index Scan):** Tận dụng chỉ mục GIN Trigram (`idx_hoclieu_tieude_trgm`) để tra cứu cây n-gram chuỗi từ khóa `%Database%`.
+*   **Giải thích:** Kết quả in ra chứng minh chi phí truy vấn (`cost`) và cơ chế quét thông minh khi có Index (Chụp ảnh 2 bảng kế hoạch này đưa vào Báo cáo Word để lấy trọn điểm thực nghiệm).
+

@@ -25,10 +25,12 @@ def setup_db():
     cur_app.execute("GRANT ALL ON SCHEMA public TO postgres;")
     cur_app.execute("GRANT ALL ON SCHEMA public TO public;")
 
+    import os
+    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
     sql_files = [
-        "src/main/resources/01_schema.sql",
-        "src/main/resources/02_data_sample.sql",
-        "src/main/resources/04_transaction_procedure.sql"
+        os.path.join(base_dir, "src", "main", "resources", "01_schema.sql"),
+        os.path.join(base_dir, "src", "main", "resources", "02_data_sample.sql"),
+        os.path.join(base_dir, "src", "main", "resources", "04_transaction_procedure.sql")
     ]
 
     for sql_file in sql_files:
@@ -36,9 +38,11 @@ def setup_db():
             with open(sql_file, "r", encoding="utf-8") as f:
                 sql_content = f.read()
             cur_app.execute(sql_content)
-            print(f"✅ Đã chạy thành công: {sql_file}")
+            rel_name = os.path.relpath(sql_file, base_dir)
+            print(f"✅ Đã chạy thành công: {rel_name}")
         except Exception as e:
-            print(f"⚠️ Lỗi khi chạy {sql_file}: {e}")
+            rel_name = os.path.relpath(sql_file, base_dir)
+            print(f"⚠️ Lỗi khi chạy {rel_name}: {e}")
 
     cur_app.close()
     conn_app.close()

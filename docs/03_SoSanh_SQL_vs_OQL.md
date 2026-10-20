@@ -17,6 +17,17 @@ Với ObjectDB / JPA, khái niệm Kế thừa được ánh xạ trực tiếp 
 *   `@Inheritance(strategy = InheritanceType.JOINED)` hoặc `@Inheritance(strategy = InheritanceType.SINGLE_TABLE)` được Java tự động quản lý.
 *   **Ưu điểm vượt trội:** Developer không cần viết lệnh `JOIN` thủ công. Các Object được tải lên bộ nhớ một cách tự nhiên. Tính toàn vẹn cấu trúc và logic đa hình (Polymorphism) được giữ nguyên vẹn từ Code xuống Database.
 
+### 1.3. Bảng So sánh Đối chiếu Hai Cách Ánh xạ Kế thừa (Minh chứng bắt buộc theo Đề cương)
+
+| Tiêu chí Đánh giá | Phương án 1: Single Table Inheritance<br>*(Dồn tất cả vào 1 bảng HocLieu khổng lồ)* | Phương án 2: Class Table Inheritance<br>*(Bảng cha HocLieu + Các bảng con - **Dự án áp dụng**)* |
+| :--- | :--- | :--- |
+| **Cấu trúc Bảng** | Duy nhất 1 bảng `HocLieu` chứa tất cả cột của Sách, Luận văn, Video... + cột phân loại `LoaiHocLieu`. | 1 bảng cha `HocLieu` chứa thuộc tính chung + 4 bảng con (`Sach`, `LuanVan`, `VideoBaiGiang`, `TaiLieuDienTu`) liên kết qua PK/FK. |
+| **Giá trị NULL** | **Rất nhiều NULL:** Sách sẽ bị NULL ở `ThoiLuong`, `NguoiHuongDan`; Video bị NULL ở `ISBN`, `SoTrang`... Gây lãng phí bộ nhớ lưu trữ. | **Triệt tiêu NULL:** Mỗi bảng con chỉ chứa đúng thuộc tính đặc thù của nó. Đạt độ chuẩn hóa cao nhất. |
+| **Ràng buộc Toàn vẹn (Constraints)** | **Khó kiểm soát:** Không thể đặt `NOT NULL` lên các thuộc tính bắt buộc của lớp con (ví dụ: `ISBN` của Sách không thể đặt NOT NULL vì Video không có ISBN). | **Tuyệt đối an toàn:** Dễ dàng đặt ràng buộc `NOT NULL`, `CHECK`, `UNIQUE` trên từng bảng con (ví dụ: `ISBN UNIQUE NOT NULL` trong bảng `Sach`). |
+| **Hiệu năng Truy vấn (Read/Write)** | • **Đọc nhanh (No JOIN):** `SELECT * FROM HocLieu WHERE LoaiHocLieu = 'Sach'`.<br>• Dễ bị phân mảnh dữ liệu nếu bảng quá lớn. | • **Cần phép JOIN:** Cần `JOIN HocLieu` với bảng con tương ứng.<br>• Bù lại kích thước từng bảng nhỏ gọn, dễ đánh Index chuyên biệt. |
+| **Khả năng Mở rộng (Scalability)** | Kém linh hoạt: Thêm 1 loại học liệu mới (ví dụ: Podcast) phải `ALTER TABLE` sửa đổi bảng dùng chung, ảnh hưởng toàn bộ hệ thống. | Cực kỳ linh hoạt: Thêm loại học liệu mới chỉ cần tạo thêm 1 bảng con mới và tham chiếu `REFERENCES HocLieu(MaHocLieu)`. |
+| **Đánh giá Đồ án** | Không phù hợp với hệ thống đa phương tiện phong phú nhiều thuộc tính riêng biệt. | **Lựa chọn tối ưu nhất**, phản ánh chuẩn mực thiết kế hướng đối tượng trong RDBMS. |
+
 ---
 
 ## 2. So sánh Ngôn ngữ Truy vấn (SQL vs OQL/JPQL)
