@@ -30,7 +30,7 @@ Người dùng không cần thao tác tạo bảng bằng tay. Kịch bản Pyth
     .\mvn.cmd clean compile
     .\run.bat
     ```
-*   **Kết quả mong đợi:** Menu Console xuất hiện với 7 tính năng (Từ 1 đến 7) và tuỳ chọn 0 để thoát.
+*   **Kết quả mong đợi:** Menu Console xuất hiện với 8 tính năng (Từ 1 đến 8) và tuỳ chọn 0 để thoát.
 
 ---
 
@@ -86,7 +86,7 @@ Khi thuyết trình/demo, hãy chia đôi màn hình: Một bên là Terminal ch
     ```sql
     SELECT TrangThai FROM BanSao WHERE MaBanSao = 'BS01';
     ```
-    *Kết quả phải là 'Dang cho muon' (chứng tỏ có người đã mượn được) và trong bảng `PhieuMuon` chỉ phát sinh đúng 1 phiếu mới cho sách này, không bị trùng (Lost Update).*
+    *Kết quả phải là 'Dang muon' (chứng tỏ có người đã mượn được) và trong bảng `PhieuMuon` chỉ phát sinh đúng 1 phiếu mới cho sách này, không bị trùng (Lost Update).*
 
 ### 4. Menu 5 - Transaction: Mô phỏng lỗi & Rollback
 *   **Thao tác Java:** Gõ `5`. Ứng dụng thử đổi trạng thái của sách `BS02` thành Đang mượn, nhưng sau đó cố tình tạo một mã độc giả sai (`BD_ERR`).
@@ -97,13 +97,66 @@ Khi thuyết trình/demo, hãy chia đôi màn hình: Một bên là Terminal ch
     ```
     *Mặc dù ở thao tác 1 Java đã cập nhật thành 'Dang muon', nhưng nhờ Rollback, khi bạn kiểm tra lại trên pgAdmin4, trạng thái vẫn được bảo toàn nguyên vẹn là 'San sang'.*
 
-### 5. Menu 6 - CSDL Hướng đối tượng (OQL/ObjectDB)
-*   **Thao tác Java:** Gõ `6`. Hệ thống chuyển sang thao tác với file `thuvien.odb` bằng ngôn ngữ hướng đối tượng. Không dùng lệnh `JOIN` nào của SQL.
-*   **Giải thích:** Đối chiếu mã nguồn file `OqlQueryDAO.java` với `HocLieuDAO.java` để thấy sự gọn gàng và tránh được vấn đề "Lệch pha trở kháng" (Impedance Mismatch).
+### 5. Menu 6 - CSDL Hướng đối tượng (OQL/ObjectDB JPA)
+*   **Thao tác Java:** Gõ `6`. Hệ thống tự động nạp 5 thực thể mẫu và thực thi trực tiếp bộ 4 câu truy vấn JPQL/OQL trên file CSDL hướng đối tượng `thuvien.odb` thông qua `EntityManager`.
+*   **Giải thích:** Đối chiếu mã nguồn file `OqlQueryDAO.java` với `HocLieuDAO.java` để thấy:
+    1. Kế thừa đa hình không cần `JOIN` (`SELECT s FROM Sach s WHERE s.soTrang > 500`).
+    2. Kiểm tra thuộc tính đa trị bằng hàm `SIZE(h.danhSachTacGia) > 1`.
+    3. Điều hướng liên kết bằng toán tử chấm `p.banDoc.maBanDoc = 'BD01'`.
+    4. Gom nhóm thống kê trên tập hợp `JOIN h.danhSachChuDe c GROUP BY c.tenChuDe`.
 
 ### 6. Menu 7 - Thực nghiệm Hiệu năng Index (GIN Trigram)
 *   **Thao tác Java:** Gõ `7`. Hệ thống sẽ chạy so sánh song song 2 trường hợp:
     1. **Trường hợp 1 (Sequential Scan):** Quét tuần tự toàn bộ bảng (chi phí `cost` và thời gian cao).
     2. **Trường hợp 2 (Bitmap Index Scan):** Tận dụng chỉ mục GIN Trigram (`idx_hoclieu_tieude_trgm`) để tra cứu cây n-gram chuỗi từ khóa `%Database%`.
 *   **Giải thích:** Kết quả in ra chứng minh chi phí truy vấn (`cost`) và cơ chế quét thông minh khi có Index (Chụp ảnh 2 bảng kế hoạch này đưa vào Báo cáo Word để lấy trọn điểm thực nghiệm).
+
+### 7. Menu 8 - PL/pgSQL Triggers, Stored Functions & Dynamic SQL
+*   **Thao tác Java:** Gõ `8`. Hệ thống chạy kịch bản kiểm thử toàn diện các thủ tục, hàm và trigger.
+*   **Backtest trực tiếp trên pgAdmin4:**
+    1. **Kiểm tra Function thống kê theo chủ đề (TABLE Function):**
+       ```sql
+       SELECT * FROM fn_ThongKe_HocLieu_TheoChuDe();
+       ```
+    2. **Kiểm tra Function kiểm tra điều kiện mượn (Scalar Function):**
+       ```sql
+       SELECT fn_KiemTra_CoTheMuon('BD01') AS CoTheMuon;
+       ```
+    3. **Kiểm tra Function tìm kiếm toàn văn GIN Trigram:**
+       ```sql
+       SELECT * FROM fn_TimKiem_HocLieu('Database');
+       ```
+    4. **Kiểm tra Function tìm kiếm động Dynamic SQL (`EXECUTE format`):**
+       ```sql
+       SELECT * FROM fn_TimKiem_HocLieu_Dong(p_TieuDe := 'Database', p_NamTu := 2015, p_SapXepTheo := 'GiaTien');
+       ```
+    5. **Kiểm tra Trigger 1 & 2 (Mượn sách & Tự động đổi trạng thái bản sao):**
+       ```sql
+       -- Tạo phiếu mượn qua SQL thông thường:
+       INSERT INTO PhieuMuon(MaPhieu, MaBanDoc, MaBanSao) VALUES ('PM_TEST_BK', 'BD01', 'BS02');
+       -- Kiểm tra BanSao BS02: Trigger tự động đổi sang 'Dang muon' mà không cần lệnh UPDATE thủ công!
+       SELECT MaBanSao, TrangThai FROM BanSao WHERE MaBanSao = 'BS02';
+       ```
+    6. **Kiểm tra Trigger 1 (Chặn mượn khi bản sao đang bận):**
+       ```sql
+       -- Cố tình mượn lại BS02 khi đang bận: Hệ thống sẽ bắn Exception ngay lập tức!
+       -- INSERT INTO PhieuMuon(MaPhieu, MaBanDoc, MaBanSao) VALUES ('PM_FAIL', 'BD01', 'BS02');
+       ```
+    7. **Kiểm tra Trigger 3 & Procedure Trả sách (Tự động tính phạt trễ hạn):**
+       ```sql
+       -- Giả lập trễ hạn 5 ngày:
+       UPDATE PhieuMuon SET NgayHanTra = CURRENT_TIMESTAMP - INTERVAL '5 days' WHERE MaPhieu = 'PM_TEST_BK';
+       -- Gọi thủ tục trả sách:
+       CALL sp_TraSach('PM_TEST_BK', 'Độc giả trả trễ do công tác');
+       -- Kiểm tra: TienPhat được tự động tính (25.000 VNĐ) và BanSao tự phục hồi về 'San sang':
+       SELECT MaPhieu, TrangThai, NgayTraThucTe, TienPhat, GhiChu FROM PhieuMuon WHERE MaPhieu = 'PM_TEST_BK';
+       SELECT MaBanSao, TrangThai FROM BanSao WHERE MaBanSao = 'BS02';
+       ```
+    8. **Kiểm tra Views báo cáo tổng hợp:**
+       ```sql
+       SELECT * FROM v_BaoCao_MuonTra;
+       SELECT * FROM v_HocLieu_DayDu;
+       SELECT * FROM fn_BaoCao_TongQuan_ThuVien();
+       ```
+
 

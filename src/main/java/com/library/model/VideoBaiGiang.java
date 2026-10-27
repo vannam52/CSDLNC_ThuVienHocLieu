@@ -1,7 +1,9 @@
 package com.library.model;
 
 import java.util.Date;
+import javax.persistence.Entity;
 
+@Entity
 public class VideoBaiGiang extends HocLieu {
     private Integer thoiLuong;
     private String doPhanGiai;
@@ -10,7 +12,9 @@ public class VideoBaiGiang extends HocLieu {
 
     public VideoBaiGiang() {}
 
-    public VideoBaiGiang(String maHocLieu, String tieuDe, String moTa, Integer namXuatBan, String ngonNgu, Double giaTien, Date ngayNhapKho, String anhBia, Integer thoiLuong, String doPhanGiai, String ngonNguPhuDe, Double dungLuong) {
+    public VideoBaiGiang(String maHocLieu, String tieuDe, String moTa, Integer namXuatBan,
+                         String ngonNgu, Double giaTien, Date ngayNhapKho, String anhBia,
+                         Integer thoiLuong, String doPhanGiai, String ngonNguPhuDe, Double dungLuong) {
         super(maHocLieu, tieuDe, moTa, namXuatBan, ngonNgu, giaTien, ngayNhapKho, anhBia);
         this.thoiLuong = thoiLuong;
         this.doPhanGiai = doPhanGiai;

@@ -82,7 +82,9 @@ public class TransactionDAO {
 
         System.out.println("1. Trạng thái BS02 trước khi chạy giao dịch lỗi: " + getStatus(testBanSao));
 
-        try (Connection conn = DatabaseConfig.getConnection()) {
+        Connection conn = null;
+        try {
+            conn = DatabaseConfig.getConnection();
             conn.setAutoCommit(false); // Bắt đầu Transaction
 
             // Thao tác 1: Cập nhật trạng thái bản sao
@@ -102,7 +104,23 @@ public class TransactionDAO {
             conn.commit();
         } catch (SQLException e) {
             System.out.println("⚠️ Bắt được ngoại lệ: " + e.getMessage());
-            System.out.println("4. Giao dịch gặp lỗi -> Tự động ROLLBACK!");
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                    System.out.println("4. Giao dịch gặp lỗi -> Đã gọi conn.rollback() tường minh thành công!");
+                } catch (SQLException ex) {
+                    System.err.println("Lỗi khi rollback: " + ex.getMessage());
+                }
+            }
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.setAutoCommit(true);
+                    conn.close();
+                } catch (SQLException ex) {
+                    // ignore
+                }
+            }
         }
 
         System.out.println("5. Trạng thái BS02 sau khi Rollback: " + getStatus(testBanSao));

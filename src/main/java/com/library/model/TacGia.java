@@ -1,14 +1,21 @@
 package com.library.model;
 
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+
+@Entity
 public class TacGia {
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
     private String ten;
 
     public TacGia() {
     }
 
-    public TacGia(Long id, String ten) {
-        this.id = id;
+    public TacGia(String ten) {
         this.ten = ten;
     }
 
@@ -22,5 +29,10 @@ public class TacGia {
 
     public void setTen(String ten) {
         this.ten = ten;
+    }
+
+    @Override
+    public String toString() {
+        return ten;
     }
 }

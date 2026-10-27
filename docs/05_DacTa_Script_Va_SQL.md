@@ -12,7 +12,7 @@ Hệ thống kịch bản Python được dùng để **Tự động hóa (Autom
 - **Tính năng cốt lõi:**
   1. Kết nối PostgreSQL và tạo mới Database `library_management`.
   2. **Clean & Reset:** Tự động gọi lệnh `DROP SCHEMA public CASCADE` để dọn sạch rác nếu chạy lại nhiều lần, đảm bảo tính ổn định của kịch bản test.
-  3. Đọc và thực thi tuần tự các file SQL `01_schema`, `02_data_sample`, và `04_transaction_procedure`.
+  3. Đọc và thực thi tuần tự 4 file SQL `01_schema`, `02_data_sample`, `04_transaction_procedure`, và `05_triggers_and_functions`.
 
 ### 2. File `generate_mock_data.py`
 - **Vai trò:** Hỗ trợ thực nghiệm "Đo lường hiệu năng".
@@ -51,3 +51,21 @@ Bộ khung SQL được thiết kế không phải để tạo ra một ứng d�
   - Định nghĩa Store Procedure `sp_MuonSach` bằng ngôn ngữ `PL/pgSQL`.
   - Áp dụng kỹ thuật **Khóa bi quan (Pessimistic Locking)** với cờ `FOR UPDATE`. Lệnh này khóa chết dòng dữ liệu của cuốn sách ngay khi luồng 1 chạm vào, bắt luồng 2 phải đợi.
   - Sử dụng khối `EXCEPTION` để chủ động bẫy lỗi và Rollback nếu phát hiện cuốn sách đã bị người khác mượn thành công.
+
+### 5. File `05_triggers_and_functions.sql` (Triggers, Functions, Dynamic SQL & Views)
+- **Vai trò:** Tầng tự động hóa toàn vẹn dữ liệu và mở rộng phân tích nghiệp vụ sâu trên PostgreSQL (PL/pgSQL).
+- **Các thành phần cốt lõi:**
+  1. **Hệ thống Trigger tự động hóa:**
+     - `trg_KiemTraDieuKienMuon` (`BEFORE INSERT ON PhieuMuon`): Chặn việc mượn sách nếu bạn đọc bị khóa, thẻ hết hạn, đã mượn tối đa 5 cuốn hoặc bản sao đang ở trạng thái khác `'San sang'`.
+     - `trg_CapNhatTrangThaiBanSao` (`AFTER INSERT OR UPDATE ON PhieuMuon`): Tự động đồng bộ trạng thái bản sao thành `'Dang muon'` khi tạo phiếu và hoàn trả về `'San sang'` khi đổi trạng thái phiếu sang `'Da tra'`.
+     - `trg_TinhTienPhat` (`BEFORE UPDATE ON PhieuMuon`): Tự động tính tiền phạt trễ hạn (5.000 VNĐ / ngày trễ), ghi nhận `NgayTraThucTe` và tự động cập nhật nhật ký ghi chú vào `GhiChu`.
+  2. **Hệ thống Stored Functions & Dynamic SQL:**
+     - `fn_ThongKe_HocLieu_TheoChuDe()`: Trả về `TABLE` thống kê số học liệu, tỷ lệ % và tổng giá trị từng chủ đề.
+     - `fn_KiemTra_CoTheMuon(p_MaBanDoc)`: Hàm vô hướng trả về `BOOLEAN` kiểm tra tư cách mượn sách.
+     - `fn_TimKiem_HocLieu(p_TuKhoa)`: Tìm kiếm toàn văn dựa trên độ tương đồng GIN Trigram (`pg_trgm`).
+     - `fn_TimKiem_HocLieu_Dong(...)`: Kỹ thuật Dynamic SQL (`EXECUTE format/query`) với whitelist chống SQL Injection.
+     - `fn_BaoCao_TongQuan_ThuVien()`: Báo cáo dashboard tổng quan chỉ số thư viện.
+  3. **Thủ tục & Views:**
+     - `sp_TraSach(p_MaPhieu)`: Thủ tục trả sách với Pessimistic Locking, phối hợp cùng các Triggers xử lý trọn vẹn luồng hoàn trả.
+     - `v_HocLieu_DayDu`: View đa hình gom nhóm đầy đủ các thuộc tính lớp con, tác giả và chủ đề.
+     - `v_BaoCao_MuonTra`: View báo cáo tình hình mượn trả, tính ngày trễ và tiền phạt.

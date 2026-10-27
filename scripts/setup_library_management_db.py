@@ -30,7 +30,8 @@ def setup_db():
     sql_files = [
         os.path.join(base_dir, "src", "main", "resources", "01_schema.sql"),
         os.path.join(base_dir, "src", "main", "resources", "02_data_sample.sql"),
-        os.path.join(base_dir, "src", "main", "resources", "04_transaction_procedure.sql")
+        os.path.join(base_dir, "src", "main", "resources", "04_transaction_procedure.sql"),
+        os.path.join(base_dir, "src", "main", "resources", "05_triggers_and_functions.sql")
     ]
 
     for sql_file in sql_files:

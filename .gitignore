@@ -22,6 +22,7 @@ env/
 
 # ObjectDB & Database temporary files
 *.odb
+*.odb$
 *.tmp
 *.log
 

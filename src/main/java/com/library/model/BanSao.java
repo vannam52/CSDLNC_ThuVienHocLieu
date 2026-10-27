@@ -1,7 +1,16 @@
 package com.library.model;
 
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.ManyToOne;
+import javax.persistence.CascadeType;
+
+@Entity
 public class BanSao {
+    @Id
     private String maBanSao;
+
+    @ManyToOne(cascade = CascadeType.PERSIST)
     private HocLieu hocLieu;
     private String trangThai;
     private String tinhTrangVatLy;

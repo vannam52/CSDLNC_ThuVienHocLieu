@@ -2,12 +2,26 @@
 <persistence xmlns="http://xmlns.jcp.org/xml/ns/persistence"
              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
              xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/persistence
-                                 http://xmlns.jcp.org/xml/ns/persistence/persistence_2_2.xsd"
-             version="2.2">
+                                 http://xmlns.jcp.org/xml/ns/persistence/persistence_2_1.xsd"
+             version="2.1">
     <persistence-unit name="library-objectdb" transaction-type="RESOURCE_LOCAL">
         <provider>com.objectdb.jpa.Provider</provider>
+
+        <!-- Đăng ký tất cả các lớp Entity -->
+        <class>com.library.model.HocLieu</class>
+        <class>com.library.model.Sach</class>
+        <class>com.library.model.LuanVan</class>
+        <class>com.library.model.TaiLieuDienTu</class>
+        <class>com.library.model.VideoBaiGiang</class>
+        <class>com.library.model.TacGia</class>
+        <class>com.library.model.ChuDe</class>
+        <class>com.library.model.BanDoc</class>
+        <class>com.library.model.BanSao</class>
+        <class>com.library.model.PhieuMuon</class>
+
         <properties>
-            <property name="javax.persistence.jdbc.url" value="$objectdb/data/library.odb"/>
+            <!-- Đường dẫn tương đối: file thuvien.odb sẽ tạo trong thư mục chạy -->
+            <property name="javax.persistence.jdbc.url" value="thuvien.odb"/>
         </properties>
     </persistence-unit>
 </persistence>
