@@ -1,7 +1,7 @@
 import psycopg2
 
 def setup_db():
-    conn = psycopg2.connect(dbname='postgres', user='postgres', password='12345', host='localhost', port=5432)
+    conn = psycopg2.connect(dbname='postgres', user='postgres', password='12092006', host='localhost', port=5432)
     conn.autocommit = True
     cur = conn.cursor()
     cur.execute("SELECT 1 FROM pg_database WHERE datname = 'library_management'")
@@ -14,7 +14,7 @@ def setup_db():
     conn.close()
 
     # Kết nối vào library_management và nạp các file SQL
-    conn_app = psycopg2.connect(dbname='library_management', user='postgres', password='12345', host='localhost', port=5432)
+    conn_app = psycopg2.connect(dbname='library_management', user='postgres', password='12092006', host='localhost', port=5432)
     conn_app.autocommit = True
     cur_app = conn_app.cursor()
 

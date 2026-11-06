@@ -8,7 +8,7 @@ fake = Faker('vi_VN')
 DB_CONFIG = {
     'dbname': 'library_management',
     'user': 'postgres',
-    'password': '12345',
+    'password': '12092006',
     'host': 'localhost',
     'port': '5432'
 }

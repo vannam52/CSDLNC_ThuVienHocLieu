@@ -4,7 +4,7 @@ import time
 
 DB_CONFIG = {
     'dbname': 'thuvien_db', 'user': 'postgres',
-    'password': '12345', 'host': 'localhost', 'port': '5432'
+    'password': '12092006', 'host': 'localhost', 'port': '5432'
 }
 
 def muon_sach(ten_sinh_vien):
