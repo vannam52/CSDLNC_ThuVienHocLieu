@@ -35,20 +35,22 @@ graph TD
         P1["setup_library_management_db.py"] -->|1. Cấu trúc bảng 4NF và Kế thừa| S1["01_schema.sql"]
         P1 -->|2. Nạp dữ liệu mẫu| S2["02_data_sample.sql"]
         P1 -->|3. Nạp Procedure Khóa bi quan| S3["04_transaction_procedure.sql"]
+        P1 -->|4. Nạp Triggers, Functions & Views| S4["05_triggers_and_functions.sql"]
         S1 --> PG[("PostgreSQL: library_management")]
         S2 --> PG
         S3 --> PG
-        P2["generate_mock_data.py"] -->|4. Bơm 2.000 Sách và 500 Bạn đọc| PG
+        S4 --> PG
+        P2["generate_mock_data.py"] -->|5. Bơm 100 Sách và 50 Bạn đọc| PG
     end
 
     subgraph GD2 ["Giai đoạn 2: Khởi động Ứng dụng và Cấu hình (Java)"]
         RUN["run.bat / Maven"] --> MAIN["Main.java (Cấu hình UTF-8)"]
-        MAIN --> MENU["ConsoleMenuService.java<br/>(Điều phối Menu 0 - 7)"]
+        MAIN --> MENU["ConsoleMenuService.java<br/>(Điều phối Menu 0 - 8)"]
         MENU --> CFG["DatabaseConfig.java<br/>(JDBC Connection)"]
         CFG --> PG
     end
 
-    subgraph GD3 ["Giai đoạn 3: Thực thi 7 Chức năng Nghiên cứu (Tầng DAO)"]
+    subgraph GD3 ["Giai đoạn 3: Thực thi 8 Chức năng Nghiên cứu (Tầng DAO)"]
         MENU -->|Menu 1, 2, 3| DAO1["HocLieuDAO.java<br/>• WITH RECURSIVE (Cây chủ đề)<br/>• Chuẩn hóa 4NF đa trị<br/>• Thống kê lượt mượn"]
         MENU -->|Menu 4, 5| DAO2["TransactionDAO.java<br/>• 2 Thread tranh chấp (FOR UPDATE)<br/>• Mô phỏng Lỗi và Rollback"]
         MENU -->|Menu 6| DAO3["OqlQueryDAO.java<br/>• So sánh đối đầu SQL vs OQL<br/>• Truy vấn hướng đối tượng"]
@@ -57,7 +59,8 @@ graph TD
         DAO1 --> PG
         DAO2 --> PG
         DAO4 --> PG
-        DAO3 -.->|Đối chiếu mô hình| ODB[("ObjectDB: thuvien.odb")]
+        DAO5 --> PG
+        DAO3 -.->|Truy vấn thực sự| ODB[("ObjectDB: thuvien.odb")]
     end
 
     classDef db fill:#316192,stroke:#fff,stroke-width:2px,color:#fff;
@@ -102,21 +105,25 @@ CSDLNC_ThuVienHocLieu/
 │   ├── dao/
 │   │   ├── HocLieuDAO.java     # Xử lý SQL đệ quy (CTE), đa trị 4NF và thống kê
 │   │   ├── TransactionDAO.java # Mô phỏng 2 Thread tranh chấp (Locking) & Rollback
-│   │   ├── OqlQueryDAO.java    # Bảng so sánh đối đầu trực quan SQL vs OQL (ObjectDB)
-│   │   └── PerformanceDAO.java # Đo thời gian thực thi (ms) và EXPLAIN ANALYZE
-│   ├── model/                  # 10 Entities Java ánh xạ mô hình đối tượng
+│   │   ├── OqlQueryDAO.java    # Bộ 4 truy vấn JPA / JPQL trên ObjectDB thực sự
+│   │   ├── PerformanceDAO.java # Đo thời gian thực thi (ms) và EXPLAIN ANALYZE
+│   │   └── PlPgSqlDAO.java     # Demo Triggers, Functions (TABLE, Trigram, Dynamic SQL)
+│   ├── model/                  # 10 Entities Java ánh xạ mô hình đối tượng (JPA)
 │   └── service/
-│       └── ConsoleMenuService.java # Giao diện Menu tương tác người dùng (Menu 0-7)
+│       └── ConsoleMenuService.java # Giao diện Menu tương tác người dùng (Menu 0-8)
 ├── src/main/resources/
 │   ├── 01_schema.sql           # Khởi tạo bảng, khóa chính, khóa ngoại, kế thừa
 │   ├── 02_data_sample.sql      # Dữ liệu mẫu ban đầu (sách, bạn đọc, danh mục)
-│   └── 04_transaction_procedure.sql # Stored Procedure có khóa bi quan (FOR UPDATE)
+│   ├── 03_advanced_queries.sql # Truy vấn nâng cao (CTE, 4NF, EXPLAIN ANALYZE)
+│   ├── 04_transaction_procedure.sql # Stored Procedure có khóa bi quan (FOR UPDATE)
+│   └── 05_triggers_and_functions.sql # Views, Functions, Procedures & Triggers PL/pgSQL
 ├── docs/                       # Toàn bộ tài liệu đặc tả, phân tích lý thuyết, so sánh SQL vs OQL
 ├── scripts/
-│   ├── setup_library_management_db.py # Tự động tạo DB, Reset schema, chạy 3 file SQL
-│   └── generate_mock_data.py   # Tự động bơm 500 bạn đọc & 2.000 học liệu (Big Data)
-├── pom.xml                     # Quản lý thư viện Maven (PostgreSQL JDBC, ObjectDB JPA)
-└── run.bat / mvn.cmd           # Script khởi chạy chương trình nhanh chóng
+│   ├── setup_library_management_db.py # Tự động tạo DB, Reset schema, chạy 4 file SQL
+│   ├── generate_mock_data.py          # Tự động nạp 50 bạn đọc & 100 học liệu (nhẹ, nhanh)
+│   └── test_transaction.py            # Kịch bản Prototype kiểm thử tranh chấp đa luồng
+├── pom.xml                            # Quản lý thư viện Maven (PostgreSQL JDBC, ObjectDB JPA)
+└── run.bat / mvn.cmd                  # Script khởi chạy chương trình (nhận diện động)
 ```
 
 ---
@@ -157,13 +164,17 @@ python scripts\generate_mock_data.py
 #### Bước 3: Biên dịch và Khởi chạy ứng dụng Java Console
 
 ```powershell
-.\mvn.cmd clean compile
+# Biên dịch dự án:
+mvn clean compile
+# (hoặc: .\mvn.cmd clean compile)
+
+# Khởi chạy ứng dụng:
 .\run.bat
 ```
 
 ---
 
-### 🎯 Kịch bản Demo 7 Chức năng "Ăn điểm" trước Giảng viên:
+### 🎯 Kịch bản Demo 8 Chức năng "Ăn điểm" trước Giảng viên:
 
 Khi ứng dụng Console xuất hiện, bạn lần lượt demo theo các tính năng trọng tâm sau:
 
@@ -172,7 +183,7 @@ Khi ứng dụng Console xuất hiện, bạn lần lượt demo theo các tính
 - **Chọn Menu 3:** Thống kê số lượt mượn học liệu $\rightarrow$ Minh chứng hàm tổng hợp `COUNT()`, `GROUP BY`, `ORDER BY`.
 - **Chọn Menu 4 (Trọng tâm):** Mô phỏng **2 Thread độc lập** cùng mượn 1 cuốn sách tại cùng 1 thời điểm $\rightarrow$ Minh chứng cơ chế **Khóa bi quan (Pessimistic Locking `SELECT ... FOR UPDATE`)**, chỉ 1 người mượn thành công, người còn lại bị chặn (chống Lost Update / Race Condition).
 - **Chọn Menu 5:** Mô phỏng lỗi khi thực hiện giao dịch $\rightarrow$ Minh chứng cơ chế **`ROLLBACK`**, trạng thái sách được hoàn trả nguyên vẹn là `San sang` (Đảm bảo tính chất Atomicity trong ACID).
-- **Chọn Menu 6 (Trọng tâm):** Bảng so sánh đối đầu trực quan giữa **SQL (PostgreSQL)** và **OQL (ObjectDB)** $\rightarrow$ Chứng minh OQL duyệt kế thừa và collection bằng dấu chấm (`.`) mà **hoàn toàn không cần `JOIN`**, gipython scripts\setup_library_management_db.pyải quyết bài toán Lệch pha trở kháng (_Impedance Mismatch_).
+- **Chọn Menu 6 (Trọng tâm):** Bảng so sánh đối đầu trực quan giữa **SQL (PostgreSQL)** và **OQL (ObjectDB)** $\rightarrow$ Chứng minh OQL duyệt kế thừa và collection bằng dấu chấm (`.`) mà **hoàn toàn không cần `JOIN`**, giải quyết bài toán Lệch pha trở kháng (_Impedance Mismatch_).
 - **Chọn Menu 7:** Thực hiện truy vấn tìm kiếm trên **2.000 dòng dữ liệu** $\rightarrow$ Đo lường thời gian (ms) và xuất kế hoạch thực thi **`EXPLAIN ANALYZE`** để đánh giá hiệu năng.
 
 ---

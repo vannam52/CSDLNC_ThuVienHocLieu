@@ -103,3 +103,7 @@ CREATE TABLE PhieuMuon (
     TrangThai VARCHAR(50) DEFAULT 'Dang muon',
     GhiChu TEXT
 );
+
+-- 5. CHỈ MỤC TỐI ƯU HÓA TÌM KIẾM (GIN Trigram Index phục vụ Menu 7)
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE INDEX IF NOT EXISTS idx_hoclieu_tieude_trgm ON HocLieu USING gin (TieuDe gin_trgm_ops);

@@ -1,7 +1,9 @@
 package com.library.model;
 
 import java.util.Date;
+import javax.persistence.Entity;
 
+@Entity
 public class Sach extends HocLieu {
     private String isbn;
     private String nhaXuatBan;
@@ -10,7 +12,9 @@ public class Sach extends HocLieu {
 
     public Sach() {}
 
-    public Sach(String maHocLieu, String tieuDe, String moTa, Integer namXuatBan, String ngonNgu, Double giaTien, Date ngayNhapKho, String anhBia, String isbn, String nhaXuatBan, Integer soTrang, Integer lanTaiBan) {
+    public Sach(String maHocLieu, String tieuDe, String moTa, Integer namXuatBan,
+                String ngonNgu, Double giaTien, Date ngayNhapKho, String anhBia,
+                String isbn, String nhaXuatBan, Integer soTrang, Integer lanTaiBan) {
         super(maHocLieu, tieuDe, moTa, namXuatBan, ngonNgu, giaTien, ngayNhapKho, anhBia);
         this.isbn = isbn;
         this.nhaXuatBan = nhaXuatBan;
@@ -26,4 +30,9 @@ public class Sach extends HocLieu {
     public void setSoTrang(Integer soTrang) { this.soTrang = soTrang; }
     public Integer getLanTaiBan() { return lanTaiBan; }
     public void setLanTaiBan(Integer lanTaiBan) { this.lanTaiBan = lanTaiBan; }
+
+    // Phương thức nghiệp vụ đối tượng
+    public boolean isSachDay() {
+        return soTrang != null && soTrang > 500;
+    }
 }

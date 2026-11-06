@@ -1,7 +1,9 @@
 package com.library.model;
 
 import java.util.Date;
+import javax.persistence.Entity;
 
+@Entity
 public class TaiLieuDienTu extends HocLieu {
     private String dinhDang;
     private Double dungLuong;
@@ -10,7 +12,9 @@ public class TaiLieuDienTu extends HocLieu {
 
     public TaiLieuDienTu() {}
 
-    public TaiLieuDienTu(String maHocLieu, String tieuDe, String moTa, Integer namXuatBan, String ngonNgu, Double giaTien, Date ngayNhapKho, String anhBia, String dinhDang, Double dungLuong, String quyenTruyCap, String urlLienKet) {
+    public TaiLieuDienTu(String maHocLieu, String tieuDe, String moTa, Integer namXuatBan,
+                         String ngonNgu, Double giaTien, Date ngayNhapKho, String anhBia,
+                         String dinhDang, Double dungLuong, String quyenTruyCap, String urlLienKet) {
         super(maHocLieu, tieuDe, moTa, namXuatBan, ngonNgu, giaTien, ngayNhapKho, anhBia);
         this.dinhDang = dinhDang;
         this.dungLuong = dungLuong;

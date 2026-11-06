@@ -1,7 +1,9 @@
 package com.library.model;
 
 import java.util.Date;
+import javax.persistence.Entity;
 
+@Entity
 public class LuanVan extends HocLieu {
     private String nguoiHuongDan;
     private String truong;
@@ -11,7 +13,10 @@ public class LuanVan extends HocLieu {
 
     public LuanVan() {}
 
-    public LuanVan(String maHocLieu, String tieuDe, String moTa, Integer namXuatBan, String ngonNgu, Double giaTien, Date ngayNhapKho, String anhBia, String nguoiHuongDan, String truong, String capBaoVe, String chuyenNganh, Double diemBaoVe) {
+    public LuanVan(String maHocLieu, String tieuDe, String moTa, Integer namXuatBan,
+                   String ngonNgu, Double giaTien, Date ngayNhapKho, String anhBia,
+                   String nguoiHuongDan, String truong, String capBaoVe,
+                   String chuyenNganh, Double diemBaoVe) {
         super(maHocLieu, tieuDe, moTa, namXuatBan, ngonNgu, giaTien, ngayNhapKho, anhBia);
         this.nguoiHuongDan = nguoiHuongDan;
         this.truong = truong;
@@ -30,4 +35,9 @@ public class LuanVan extends HocLieu {
     public void setChuyenNganh(String chuyenNganh) { this.chuyenNganh = chuyenNganh; }
     public Double getDiemBaoVe() { return diemBaoVe; }
     public void setDiemBaoVe(Double diemBaoVe) { this.diemBaoVe = diemBaoVe; }
+
+    // Phương thức nghiệp vụ đối tượng
+    public boolean isXuatSac() {
+        return diemBaoVe != null && diemBaoVe >= 9.0;
+    }
 }

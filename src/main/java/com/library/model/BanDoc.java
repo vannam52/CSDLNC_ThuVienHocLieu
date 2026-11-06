@@ -1,20 +1,29 @@
 package com.library.model;
 
 import java.util.Date;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 
+@Entity
 public class BanDoc {
+    @Id
     private String maBanDoc;
     private String hoTen;
     private String email;
     private String soDienThoai;
     private String matKhau;
     private String loaiTaiKhoan;
+
+    @Temporal(TemporalType.DATE)
     private Date ngayHetHan;
     private Boolean taiKhoanBiKhoa;
 
     public BanDoc() {}
 
-    public BanDoc(String maBanDoc, String hoTen, String email, String soDienThoai, String matKhau, String loaiTaiKhoan, Date ngayHetHan, Boolean taiKhoanBiKhoa) {
+    public BanDoc(String maBanDoc, String hoTen, String email, String soDienThoai,
+                  String matKhau, String loaiTaiKhoan, Date ngayHetHan, Boolean taiKhoanBiKhoa) {
         this.maBanDoc = maBanDoc;
         this.hoTen = hoTen;
         this.email = email;
