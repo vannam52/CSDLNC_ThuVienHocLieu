@@ -16,6 +16,7 @@ public class ConsoleMenuService {
     private final OqlQueryDAO oqlQueryDAO = new OqlQueryDAO();
     private final PerformanceDAO performanceDAO = new PerformanceDAO();
     private final com.library.dao.PlPgSqlDAO plPgSqlDAO = new com.library.dao.PlPgSqlDAO();
+    private final com.library.dao.ThucNghiemDeTai3DAO thucNghiemDeTai3DAO = new com.library.dao.ThucNghiemDeTai3DAO();
 
     public void start() {
         while (true) {
@@ -30,9 +31,10 @@ public class ConsoleMenuService {
             System.out.println("6. [OQL/ObjectDB] Thực thi bộ truy vấn OQL / JPQL");
             System.out.println("7. [Thực nghiệm] Đo hiệu năng chỉ mục GIN Trigram");
             System.out.println("8. [PL/pgSQL] Demo Triggers, Functions & Procedures");
+            System.out.println("9. [Thực nghiệm Đề 3] Minh chứng 4NF & So sánh Kế thừa (Trang 5)");
             System.out.println("0. Thoát chương trình");
             System.out.println("====================================================");
-            System.out.print("Chọn chức năng demo (0-8): ");
+            System.out.print("Chọn chức năng demo (0-9): ");
 
             int choice = -1;
             try {
@@ -72,6 +74,9 @@ public class ConsoleMenuService {
                     break;
                 case 8:
                     plPgSqlDAO.demoTriggersAndFunctions();
+                    break;
+                case 9:
+                    thucNghiemDeTai3DAO.runDemo();
                     break;
                 case 0:
                     System.out.println("Đã thoát chương trình!");
