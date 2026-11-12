@@ -16,15 +16,13 @@ BEGIN
 
     -- Kiểm tra điều kiện khả dụng
     IF v_TrangThai IS DISTINCT FROM 'San sang' THEN
-        RAISE EXCEPTION 'Bản sao % hiện không khả dụng để mượn (Trạng thái: %)!', p_MaBanSao, COALESCE(v_TrangThai, 'Khong xac dinh');
+        RAISE EXCEPTION 'Bản sao % hiện không khả dụng để mượn (Trạng thái: %)!', p_MaBanSao, v_TrangThai
+            USING ERRCODE = '55000';
     END IF;
 
     -- Ghi nhận phiếu mượn
     INSERT INTO PhieuMuon(MaPhieu, MaBanDoc, MaBanSao, NgayMuon, NgayHanTra, TrangThai)
     VALUES (p_MaPhieu, p_MaBanDoc, p_MaBanSao, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP + INTERVAL '14 days', 'Dang muon');
-
-    -- Cập nhật trạng thái bản sao
-    UPDATE BanSao SET TrangThai = 'Dang muon' WHERE MaBanSao = p_MaBanSao;
 
 EXCEPTION
     WHEN NO_DATA_FOUND THEN

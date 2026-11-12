@@ -1,53 +1,58 @@
+import os
+from pathlib import Path
+
 import psycopg2
+from psycopg2 import sql
+
+
+def database_config():
+    return {
+        'dbname': os.getenv('LIBRARY_DB_NAME', 'library_management'),
+        'user': os.getenv('LIBRARY_DB_USER', 'postgres'),
+        'password': os.getenv('LIBRARY_DB_PASSWORD', '12345'),
+        'host': os.getenv('LIBRARY_DB_HOST', 'localhost'),
+        'port': os.getenv('LIBRARY_DB_PORT', '5432'),
+    }
+
 
 def setup_db():
-    conn = psycopg2.connect(dbname='postgres', user='postgres', password='12345', host='localhost', port=5432)
-    conn.autocommit = True
-    cur = conn.cursor()
-    cur.execute("SELECT 1 FROM pg_database WHERE datname = 'library_management'")
-    if not cur.fetchone():
-        cur.execute("CREATE DATABASE library_management")
-        print("✅ Đã tạo database: library_management")
-    else:
-        print("ℹ️ Database library_management đã tồn tại.")
-    cur.close()
-    conn.close()
+    config = database_config()
+    name = config['dbname']
+    if name in ('postgres', 'template0', 'template1'):
+        raise ValueError('Hãy chọn một CSDL riêng cho đồ án.')
 
-    # Kết nối vào library_management và nạp các file SQL
-    conn_app = psycopg2.connect(dbname='library_management', user='postgres', password='12345', host='localhost', port=5432)
-    conn_app.autocommit = True
-    cur_app = conn_app.cursor()
+    admin = psycopg2.connect(**{**config, 'dbname': 'postgres'})
+    try:
+        admin.autocommit = True
+        with admin.cursor() as cursor:
+            cursor.execute('SELECT 1 FROM pg_database WHERE datname = %s', (name,))
+            if cursor.fetchone() is None:
+                cursor.execute(sql.SQL('CREATE DATABASE {}').format(sql.Identifier(name)))
+    finally:
+        admin.close()
 
-    # Xoá trắng toàn bộ bảng cũ để làm sạch (Reset DB)
-    print("🧹 Đang làm sạch Database cũ...")
-    cur_app.execute("DROP SCHEMA public CASCADE;")
-    cur_app.execute("CREATE SCHEMA public;")
-    cur_app.execute("GRANT ALL ON SCHEMA public TO postgres;")
-    cur_app.execute("GRANT ALL ON SCHEMA public TO public;")
-
-    import os
-    base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-    sql_files = [
-        os.path.join(base_dir, "src", "main", "resources", "01_schema.sql"),
-        os.path.join(base_dir, "src", "main", "resources", "02_data_sample.sql"),
-        os.path.join(base_dir, "src", "main", "resources", "04_transaction_procedure.sql"),
-        os.path.join(base_dir, "src", "main", "resources", "05_triggers_and_functions.sql")
+    resources = Path(__file__).resolve().parents[1] / 'src' / 'main' / 'resources'
+    files = [
+        '01_schema.sql',
+        '02_data_sample.sql',
+        '04_transaction_procedure.sql',
+        '05_triggers_and_functions.sql',
+        '06_thuc_nghiem_de_tai_3.sql',
     ]
+    connection = psycopg2.connect(**config)
+    try:
+        # Khôi phục schema cũ nếu bất kỳ script nào thất bại.
+        with connection, connection.cursor() as cursor:
+            cursor.execute('DROP SCHEMA public CASCADE')
+            cursor.execute('CREATE SCHEMA public')
+            for filename in files:
+                cursor.execute((resources / filename).read_text(encoding='utf-8'))
+                print(f'Đã chạy {filename}')
+    finally:
+        connection.close()
 
-    for sql_file in sql_files:
-        try:
-            with open(sql_file, "r", encoding="utf-8") as f:
-                sql_content = f.read()
-            cur_app.execute(sql_content)
-            rel_name = os.path.relpath(sql_file, base_dir)
-            print(f"✅ Đã chạy thành công: {rel_name}")
-        except Exception as e:
-            rel_name = os.path.relpath(sql_file, base_dir)
-            print(f"⚠️ Lỗi khi chạy {rel_name}: {e}")
+    print(f'Khởi tạo xong CSDL {name}.')
 
-    cur_app.close()
-    conn_app.close()
-    print("\n🎉 Khởi tạo CSDL PostgreSQL cho LibraryManagementConsole thành công 100%!")
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     setup_db()

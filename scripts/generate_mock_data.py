@@ -2,20 +2,15 @@ import psycopg2
 from faker import Faker
 import random
 import datetime
+from setup_library_management_db import database_config
 
 fake = Faker('vi_VN')
 
-DB_CONFIG = {
-    'dbname': 'library_management',
-    'user': 'postgres',
-    'password': '12345',
-    'host': 'localhost',
-    'port': '5432'
-}
-
 def generate_data(num_books=100, num_readers=50):
+    random.seed(3)
+    fake.seed_instance(3)
     try:
-        conn = psycopg2.connect(**DB_CONFIG)
+        conn = psycopg2.connect(**database_config())
         cur = conn.cursor()
         print(f"✅ Đang kết nối tới Database 'library_management'...")
         print(f"🚀 Bắt đầu sinh dữ liệu mẫu: {num_readers} Bạn Đọc và {num_books} Học Liệu...")
@@ -27,9 +22,9 @@ def generate_data(num_books=100, num_readers=50):
             hoten = fake.name()
             email = f"user_{i}_{random.randint(100, 999)}@thuvien.edu.vn"
             sdt = f"09{random.randint(10000000, 99999999)}"
-            matkhau = "123456"
+            matkhau = "DEMO"
             loai_tk = random.choice(["Sinh vien", "Giang vien", "Khach"])
-            ngay_het_han = datetime.date(2027, 12, 31)
+            ngay_het_han = datetime.date.today() + datetime.timedelta(days=365)
 
             cur.execute("""
                 INSERT INTO BanDoc (MaBanDoc, HoTen, Email, SoDienThoai, MatKhau, LoaiTaiKhoan, NgayHetHan, TaiKhoanBiKhoa)
@@ -64,8 +59,8 @@ def generate_data(num_books=100, num_readers=50):
             giatien = random.randint(80, 500) * 1000.0
 
             cur.execute("""
-                INSERT INTO HocLieu (MaHocLieu, TieuDe, MoTa, NamXuatBan, NgonNgu, GiaTien, NgayNhapKho)
-                VALUES (%s, %s, %s, %s, %s, %s, CURRENT_DATE)
+                INSERT INTO HocLieu (MaHocLieu, TieuDe, MoTa, NamXuatBan, NgonNgu, GiaTien, LoaiHocLieu)
+                VALUES (%s, %s, %s, %s, %s, %s, 'Sach')
                 ON CONFLICT (MaHocLieu) DO NOTHING;
             """, (ma_hl, tieude, mota, namxb, ngonngu, giatien))
 
@@ -105,14 +100,14 @@ def generate_data(num_books=100, num_readers=50):
 
         print(f"✅ Đã nạp thành công {inserted_books} Sách, Bản Sao, Tác Giả & Chủ Đề!")
 
-        # 3. Sinh thêm Luận văn, Video bài giảng & Tài liệu điện tử (Kế thừa đa hình)
-        print("🚀 Đang nạp thêm Luận văn, Video bài giảng & Tài liệu điện tử...")
+        # 3. Sinh thêm Luận văn và Video bài giảng (Kế thừa đa hình)
+        print("🚀 Đang nạp thêm Luận văn và Video bài giảng...")
         for j in range(1, 11):
             # Luận văn
             ma_lv = f"LV_M_{j:02d}"
             cur.execute("""
-                INSERT INTO HocLieu (MaHocLieu, TieuDe, MoTa, NamXuatBan, NgonNgu, GiaTien, NgayNhapKho)
-                VALUES (%s, %s, 'Luan van nghien cuu tot nghiep', %s, 'Tieng Viet', 0, CURRENT_DATE)
+                INSERT INTO HocLieu (MaHocLieu, TieuDe, MoTa, NamXuatBan, NgonNgu, GiaTien, LoaiHocLieu)
+                VALUES (%s, %s, 'Luan van nghien cuu tot nghiep', %s, 'Tieng Viet', 0, 'LuanVan')
                 ON CONFLICT DO NOTHING;
             """, (ma_lv, f"Nghien cuu va Ung dung CSDL Nang cao so {j}", random.randint(2021, 2024)))
             cur.execute("""
@@ -124,8 +119,8 @@ def generate_data(num_books=100, num_readers=50):
             # Video bài giảng
             ma_vd = f"VD_M_{j:02d}"
             cur.execute("""
-                INSERT INTO HocLieu (MaHocLieu, TieuDe, MoTa, NamXuatBan, NgonNgu, GiaTien, NgayNhapKho)
-                VALUES (%s, %s, 'Video khoa hoc Database truc tuyen', 2024, 'Tieng Viet', 0, CURRENT_DATE)
+                INSERT INTO HocLieu (MaHocLieu, TieuDe, MoTa, NamXuatBan, NgonNgu, GiaTien, LoaiHocLieu)
+                VALUES (%s, %s, 'Video khoa hoc Database truc tuyen', 2024, 'Tieng Viet', 0, 'VideoBaiGiang')
                 ON CONFLICT DO NOTHING;
             """, (ma_vd, f"Khoa hoc Video SQL & PostgreSQL Nâng cao Bai {j}"))
             cur.execute("""
@@ -139,26 +134,26 @@ def generate_data(num_books=100, num_readers=50):
             cur.execute("INSERT INTO HocLieu_ChuDe (MaHocLieu, MaChuDe) VALUES (%s, 'CD02') ON CONFLICT DO NOTHING;", (ma_vd,))
 
         # 4. Sinh 25 Phiếu Mượn mẫu phục vụ Menu 3 (chọn các bản sao khác nhau)
-        sampled_copies = random.sample(range(1, num_books + 1), min(25, num_books))
+        sampled_copies = random.sample(range(1, num_books + 1), min(25, num_books, 5 * num_readers))
         for k, copy_idx in enumerate(sampled_copies, 1):
             ma_pm = f"PM_M_{k:03d}"
-            ma_bd = f"BD_M_{random.randint(1, num_readers):03d}"
+            ma_bd = f"BD_M_{(k - 1) % num_readers + 1:03d}"
             ma_bs = f"BS_M_{copy_idx:03d}"
             cur.execute("""
                 INSERT INTO PhieuMuon (MaPhieu, MaBanDoc, MaBanSao, NgayMuon, NgayHanTra, TrangThai)
-                VALUES (%s, %s, %s, CURRENT_TIMESTAMP - INTERVAL '10 days', CURRENT_TIMESTAMP + INTERVAL '4 days', 'Dang muon')
-                ON CONFLICT DO NOTHING;
-            """, (ma_pm, ma_bd, ma_bs))
+                SELECT %s, %s, %s, CURRENT_TIMESTAMP - INTERVAL '10 days', CURRENT_TIMESTAMP + INTERVAL '4 days', 'Dang muon'
+                WHERE NOT EXISTS (SELECT 1 FROM PhieuMuon WHERE MaPhieu = %s);
+            """, (ma_pm, ma_bd, ma_bs, ma_pm))
 
-        print("✅ Đã nạp thành công Luận văn, Video bài giảng và 25 Phiếu mượn!")
+        print(f"✅ Đã xử lý Luận văn, Video bài giảng và {len(sampled_copies)} Phiếu mượn mẫu!")
 
         conn.commit()
         cur.close()
         conn.close()
         print("\n🎉 HOÀN TẤT 100%! CSDL 'library_management' đã có đủ dữ liệu sẵn sàng để test!")
 
-    except Exception as e:
-        print(f"❌ Lỗi: {e}")
+    except psycopg2.Error as error:
+        raise SystemExit(f"❌ Lỗi nạp dữ liệu: {error}") from error
 
 if __name__ == '__main__':
     generate_data(num_books=100, num_readers=50)

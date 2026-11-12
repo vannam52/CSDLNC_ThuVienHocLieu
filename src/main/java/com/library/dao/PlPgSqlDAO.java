@@ -5,6 +5,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Savepoint;
 import java.sql.Statement;
 
 import com.library.config.DatabaseConfig;
@@ -67,16 +68,12 @@ public class PlPgSqlDAO {
             System.out.println("\n⚙️ 4. DEMO TRIGGER 1 & 2: TỰ ĐỘNG ĐỒNG BỘ TRẠNG THÁI & CHẶN BẢN SAO BẬN");
             String maPhieuDemo = "PM_DEMO_TRG";
             String maBanDoc = "BD01";
-            String maBanSao = "BS02";
-
-            // Dọn dẹp trước nếu có
-            try (PreparedStatement del = conn.prepareStatement("DELETE FROM PhieuMuon WHERE MaPhieu = ?")) {
-                del.setString(1, maPhieuDemo);
-                del.executeUpdate();
-            }
-            try (PreparedStatement up = conn.prepareStatement("UPDATE BanSao SET TrangThai = 'San sang' WHERE MaBanSao = ?")) {
-                up.setString(1, maBanSao);
-                up.executeUpdate();
+            String maBanSao = "BS_DEMO_TRG";
+            conn.setAutoCommit(false);
+            try (PreparedStatement insertCopy = conn.prepareStatement(
+                    "INSERT INTO BanSao(MaBanSao, MaHocLieu) VALUES (?, 'HL01')")) {
+                insertCopy.setString(1, maBanSao);
+                insertCopy.executeUpdate();
             }
 
             System.out.println("   (a) Trạng thái ban đầu của " + maBanSao + ": " + getTrangThaiBanSao(conn, maBanSao));
@@ -94,12 +91,17 @@ public class PlPgSqlDAO {
 
             // Thử tạo phiếu thứ 2 với cùng bản sao -> Trigger chặn
             System.out.println("   (d) Thử chèn tiếp phiếu thứ 2 với cùng bản sao đang bận " + maBanSao + "...");
+            Savepoint beforeConflict = conn.setSavepoint();
             try (PreparedStatement insConflict = conn.prepareStatement("INSERT INTO PhieuMuon(MaPhieu, MaBanDoc, MaBanSao) VALUES ('PM_CONFLICT', ?, ?)")) {
                 insConflict.setString(1, maBanDoc);
                 insConflict.setString(2, maBanSao);
                 insConflict.executeUpdate();
-                System.out.println("   ❌ LỖI: Lẽ ra phải bị chặn!");
+                throw new IllegalStateException("Lẽ ra phiếu mượn trùng phải bị chặn.");
             } catch (SQLException e) {
+                if (!"55000".equals(e.getSQLState())) {
+                    throw e;
+                }
+                conn.rollback(beforeConflict);
                 System.out.println("   -> ✅ TRIGGER ĐÃ CHẶN THÀNH CÔNG: " + e.getMessage().trim());
             }
 
@@ -152,11 +154,7 @@ public class PlPgSqlDAO {
                 }
             }
 
-            // Dọn dẹp dữ liệu demo
-            try (PreparedStatement del = conn.prepareStatement("DELETE FROM PhieuMuon WHERE MaPhieu = ?")) {
-                del.setString(1, maPhieuDemo);
-                del.executeUpdate();
-            }
+            conn.rollback();
 
             System.out.println("\n✅ HOÀN THÀNH DEMO BƯỚC 2: PL/pgSQL TRIGGERS & FUNCTIONS!");
             System.out.println("==================================================================");

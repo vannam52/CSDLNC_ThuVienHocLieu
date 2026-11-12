@@ -51,6 +51,6 @@ public class PhieuMuon {
 
     // Phương thức nghiệp vụ đối tượng
     public boolean isDangMuon() {
-        return "Dang muon".equalsIgnoreCase(trangThai);
+        return "Dang muon".equalsIgnoreCase(trangThai) || "Đang mượn".equalsIgnoreCase(trangThai);
     }
 }
