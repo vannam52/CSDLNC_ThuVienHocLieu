@@ -223,14 +223,16 @@ public class OqlQueryDAO {
         System.out.println("      SELECT bd.HoTen, h.TieuDe FROM PhieuMuon pm");
         System.out.println("      JOIN BanDoc bd ON pm.MaBanDoc = bd.MaBanDoc");
         System.out.println("      JOIN BanSao bs ON pm.MaBanSao = bs.MaBanSao");
-        System.out.println("      JOIN HocLieu h ON bs.MaHocLieu = h.MaHocLieu;");
+        System.out.println("      JOIN HocLieu h ON bs.MaHocLieu = h.MaHocLieu");
+        System.out.println("      WHERE bd.HoTen = 'Lê Thị Hoa';");
         System.out.println();
-        System.out.println("   🟢 OQL — Dùng toán tử dấu chấm (.) xuyên 3 thực thể, 0 từ JOIN:");
-        System.out.println("      SELECT p FROM PhieuMuon p  [→ p.banDoc.hoTen / p.banSao.hocLieu.tieuDe]");
+        System.out.println("   🟢 JPQL — Lọc qua biểu thức đường dẫn trên đối tượng:");
+        System.out.println("      SELECT p FROM PhieuMuon p WHERE p.banDoc.hoTen = :hoTen");
 
         // === THỰC THI THỰC SỰ ===
         TypedQuery<PhieuMuon> query = em.createQuery(
-                "SELECT p FROM com.library.model.PhieuMuon p", PhieuMuon.class);
+                "SELECT p FROM com.library.model.PhieuMuon p WHERE p.banDoc.hoTen = :hoTen", PhieuMuon.class);
+        query.setParameter("hoTen", "Lê Thị Hoa");
         List<PhieuMuon> result = query.getResultList();
 
         System.out.println("      → Kết quả thực tế (" + result.size() + " phiếu mượn):");
@@ -299,10 +301,9 @@ public class OqlQueryDAO {
     private void inKetLuan() {
         System.out.println("\n------------------------------------------------------------------------------------------");
         System.out.println("🏆 KẾT LUẬN NGHIÊN CỨU (thực thi trực tiếp trên ObjectDB v2.x):");
-        System.out.println("   1. ObjectDB (OQL/JPQL) loại bỏ hoàn toàn 'Lệch pha trở kháng' (Impedance Mismatch).");
-        System.out.println("      → Truy vấn kế thừa, đa trị, điều hướng: gọn hơn SQL tới 3–5 lần.");
-        System.out.println("   2. PostgreSQL (SQL) vượt trội về Transaction + Locking chống xung đột mượn trùng.");
-        System.out.println("   3. Mô hình Hybrid (PostgreSQL + ObjectDB) tận dụng ưu điểm của cả hai.");
+        System.out.println("   JPQL thể hiện quan hệ qua thuộc tính đối tượng và tập hợp.");
+        System.out.println("   Truy vấn gom nhóm vẫn dùng JOIN trên tập hợp chủ đề.");
+        System.out.println("   PostgreSQL và ObjectDB dùng các bộ dữ liệu mẫu độc lập.");
         System.out.println("==========================================================================================\n");
     }
 }

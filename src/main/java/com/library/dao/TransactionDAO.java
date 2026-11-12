@@ -1,158 +1,195 @@
 package com.library.dao;
 
-import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.concurrent.CountDownLatch;
+import java.util.UUID;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import com.library.config.DatabaseConfig;
 
 public class TransactionDAO {
-
-    // DEMO 3: Giả lập 2 phiên mượn CÙNG 1 BẢN SAO đồng thời (Chỉ 1 phiên thành công)
-    public void demoConcurrentBorrow(String maBanSao) {
-        System.out.println("\n🔥 ⚙️  GIẢ LẬP CONCURRENT TRANSACTIONS:");
-        System.out.println("Phiên 1 và Phiên 2 cùng gọi sp_MuonSach mượn bản sao: " + maBanSao);
-        System.out.println("------------------------------------------------------------------");
-
-        // Tự động khôi phục môi trường test: Đưa bản sao về 'San sang' và dọn phiếu cũ để có thể chạy lại nhiều lần
-        resetBanSaoState(maBanSao);
-
-        CountDownLatch readyLatch = new CountDownLatch(1);
-        CountDownLatch finishLatch = new CountDownLatch(2);
-
-        Runnable task1 = () -> {
-            try {
-                readyLatch.await();
-                callProcedure("PM_PHIEN_1", "BD01", maBanSao, "Phiên 1");
-            } catch (Exception e) {
-                e.printStackTrace();
-            } finally {
-                finishLatch.countDown();
-            }
-        };
-
-        Runnable task2 = () -> {
-            try {
-                readyLatch.await();
-                callProcedure("PM_PHIEN_2", "BD01", maBanSao, "Phiên 2");
-            } catch (Exception e) {
-                e.printStackTrace();
-            } finally {
-                finishLatch.countDown();
-            }
-        };
-
-        new Thread(task1).start();
-        new Thread(task2).start();
-
-        readyLatch.countDown(); // Kích hoạt chạy đồng thời
-
-        try {
-            finishLatch.await();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        System.out.println("------------------------------------------------------------------");
-    }
-
-    private void callProcedure(String maPhieu, String maBanDoc, String maBanSao, String threadName) {
-        String sql = "CALL sp_MuonSach(?, ?, ?)";
-        try (Connection conn = DatabaseConfig.getConnection();
-             CallableStatement stmt = conn.prepareCall(sql)) {
-
-            stmt.setString(1, maPhieu);
-            stmt.setString(2, maBanDoc);
-            stmt.setString(3, maBanSao);
-            stmt.execute();
-
-            System.out.println(" -> [" + threadName + "] ✅ THÀNH CÔNG: Tạo phiếu " + maPhieu);
-
-        } catch (SQLException e) {
-            System.out.println(" -> [" + threadName + "] ❌ BỊ CHẶN/LỖI: " + e.getMessage());
+    private record Demo(String hocLieu, String banSao, String banDoc1, String banDoc2,
+                        String phieu1, String phieu2) {
+        Demo(String suffix) {
+            this("HL_D" + suffix, "BS_D" + suffix, "BD_A" + suffix, "BD_B" + suffix,
+                    "PM_A" + suffix, "PM_B" + suffix);
         }
     }
 
-    // DEMO 4: Cố ý gây lỗi và kiểm chứng dữ liệu được Rollback
-    public void demoRollbackAndVerify() {
-        System.out.println("\n🔄 🧪 DEMO ROLLBACK & XÁC NHẬN TRẠNG THÁI DỮ LIỆU:");
-        String testBanSao = "BS02";
-
-        System.out.println("1. Trạng thái BS02 trước khi chạy giao dịch lỗi: " + getStatus(testBanSao));
-
-        Connection conn = null;
+    public void demoConcurrentBorrow() {
+        Demo demo = new Demo(UUID.randomUUID().toString().substring(0, 12));
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        boolean created = false;
         try {
-            conn = DatabaseConfig.getConnection();
-            conn.setAutoCommit(false); // Bắt đầu Transaction
+            createDemo(demo);
+            created = true;
+            System.out.printf("%nMƯỢN BẢN SAO CUỐI CÙNG %s%n", demo.banSao());
+            System.out.printf("Học liệu %s có %d bản sao sẵn sàng. Hai bạn đọc: %s và %s.%n",
+                    demo.hocLieu(), countAvailable(demo), demo.banDoc1(), demo.banDoc2());
 
-            // Thao tác 1: Cập nhật trạng thái bản sao
-            try (PreparedStatement stmt1 = conn.prepareStatement("UPDATE BanSao SET TrangThai = 'Dang muon' WHERE MaBanSao = ?")) {
-                stmt1.setString(1, testBanSao);
-                stmt1.executeUpdate();
-                System.out.println("2. [Thao tác 1] Đã đổi trạng thái " + testBanSao + " thành 'Dang muon' trong Transaction.");
+            CyclicBarrier start = new CyclicBarrier(2);
+            Future<Boolean> first = executor.submit(
+                    () -> borrow(start, demo.phieu1(), demo.banDoc1(), demo.banSao()));
+            Future<Boolean> second = executor.submit(
+                    () -> borrow(start, demo.phieu2(), demo.banDoc2(), demo.banSao()));
+            boolean firstSucceeded = first.get();
+            boolean secondSucceeded = second.get();
+            int activeLoans = countActiveLoans(demo);
+            if (firstSucceeded == secondSucceeded || activeLoans != 1) {
+                throw new IllegalStateException("Kết quả bất thường: " + activeLoans + " phiếu đang hiệu lực.");
             }
-
-            // Thao tác 2: Cố ý làm sai (Mã bạn đọc BD_ERR không tồn tại)
-            System.out.println("3. [Thao tác 2] Cố ý chèn phiếu mượn chứa mã đọc giả không tồn tại (BD_ERR)...");
-            try (PreparedStatement stmt2 = conn.prepareStatement("INSERT INTO PhieuMuon(MaPhieu, MaBanDoc, MaBanSao) VALUES ('PM_ERR', 'BD_ERR', ?)")) {
-                stmt2.setString(1, testBanSao);
-                stmt2.executeUpdate();
-            }
-
-            conn.commit();
-        } catch (SQLException e) {
-            System.out.println("⚠️ Bắt được ngoại lệ: " + e.getMessage());
-            if (conn != null) {
-                try {
-                    conn.rollback();
-                    System.out.println("4. Giao dịch gặp lỗi -> Đã gọi conn.rollback() tường minh thành công!");
-                } catch (SQLException ex) {
-                    System.err.println("Lỗi khi rollback: " + ex.getMessage());
-                }
-            }
+            System.out.printf("Kết quả: 1 phiên thành công, 1 phiên bị chặn, %d phiếu đang hiệu lực.%n",
+                    activeLoans);
+        } catch (InterruptedException error) {
+            Thread.currentThread().interrupt();
+            System.err.println("Đã ngắt demo mượn đồng thời.");
+        } catch (SQLException | ExecutionException | IllegalStateException error) {
+            System.err.println("Lỗi demo mượn đồng thời: " + error.getMessage());
         } finally {
-            if (conn != null) {
+            executor.shutdownNow();
+            if (created) {
+                cleanup(demo);
+            }
+        }
+    }
+
+    private boolean borrow(CyclicBarrier start, String phieu, String banDoc, String banSao) throws Exception {
+        try (Connection connection = DatabaseConfig.getConnection();
+             PreparedStatement statement = connection.prepareStatement("CALL sp_MuonSach(?, ?, ?)")) {
+            statement.setString(1, phieu);
+            statement.setString(2, banDoc);
+            statement.setString(3, banSao);
+            statement.setQueryTimeout(10);
+            start.await(10, TimeUnit.SECONDS);
+            statement.execute();
+            System.out.printf("%s mượn thành công, phiếu %s.%n", banDoc, phieu);
+            return true;
+        } catch (SQLException error) {
+            if (!"55000".equals(error.getSQLState())) {
+                throw error;
+            }
+            System.out.printf("%s bị chặn vì bản sao đã được mượn.%n", banDoc);
+            return false;
+        }
+    }
+
+    public void demoRollbackAndVerify() {
+        Demo demo = new Demo(UUID.randomUUID().toString().substring(0, 12));
+        boolean created = false;
+        try {
+            createDemo(demo);
+            created = true;
+            System.out.println("\nKIỂM THỬ ROLLBACK KHI MƯỢN SÁCH");
+            try (Connection connection = DatabaseConfig.getConnection()) {
+                connection.setAutoCommit(false);
                 try {
-                    conn.setAutoCommit(true);
-                    conn.close();
-                } catch (SQLException ex) {
-                    // ignore
+                    execute(connection, "UPDATE BanSao SET TinhTrangVatLy = 'Thay đổi tạm' WHERE MaBanSao = ?",
+                            demo.banSao());
+                    System.out.println("Đã cập nhật tình trạng vật lý trong giao dịch.");
+                    execute(connection, "INSERT INTO PhieuMuon(MaPhieu, MaBanDoc, MaBanSao) VALUES (?, ?, ?)",
+                            demo.phieu1(), "MISSING_" + demo.banDoc1().substring(4), demo.banSao());
+                    throw new IllegalStateException("Giao dịch thử nghiệm phải từ chối bạn đọc không tồn tại.");
+                } catch (SQLException error) {
+                    if (!"23503".equals(error.getSQLState())) {
+                        throw error;
+                    }
+                    System.out.println("Lỗi dự kiến: " + error.getMessage());
+                } finally {
+                    connection.rollback();
                 }
             }
-        }
-
-        System.out.println("5. Trạng thái BS02 sau khi Rollback: " + getStatus(testBanSao));
-        System.out.println("=> Kết luận: Dữ liệu đã được khôi phục nguyên vẹn!");
-        System.out.println("------------------------------------------------------------------");
-    }
-
-    private void resetBanSaoState(String maBanSao) {
-        try (Connection conn = DatabaseConfig.getConnection()) {
-            try (PreparedStatement stmt = conn.prepareStatement("DELETE FROM PhieuMuon WHERE MaPhieu IN ('PM_PHIEN_1', 'PM_PHIEN_2', 'PM_ERR') OR MaBanSao = ?")) {
-                stmt.setString(1, maBanSao);
-                stmt.executeUpdate();
+            boolean restored = count(demo.banSao(), """
+                    SELECT COUNT(*) FROM BanSao
+                    WHERE MaBanSao = ? AND TrangThai = 'San sang' AND TinhTrangVatLy = 'Mới'
+                    """) == 1 && countActiveLoans(demo) == 0;
+            if (!restored) {
+                throw new IllegalStateException("Dữ liệu sau rollback khác dữ liệu ban đầu.");
             }
-            try (PreparedStatement stmt = conn.prepareStatement("UPDATE BanSao SET TrangThai = 'San sang' WHERE MaBanSao = ?")) {
-                stmt.setString(1, maBanSao);
-                stmt.executeUpdate();
+            System.out.println("Rollback thành công: tình trạng vật lý ban đầu được khôi phục, 0 phiếu được tạo.");
+        } catch (SQLException | IllegalStateException error) {
+            System.err.println("Lỗi demo rollback: " + error.getMessage());
+        } finally {
+            if (created) {
+                cleanup(demo);
             }
-        } catch (SQLException e) {
-            // Bỏ qua lỗi reset nếu có
         }
     }
 
-    private String getStatus(String maBanSao) {
-        String sql = "SELECT TrangThai FROM BanSao WHERE MaBanSao = ?";
-        try (Connection conn = DatabaseConfig.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, maBanSao);
-            ResultSet rs = stmt.executeQuery();
-            if (rs.next()) return rs.getString("TrangThai");
-        } catch (SQLException e) {
-            e.printStackTrace();
+    private void createDemo(Demo demo) throws SQLException {
+        try (Connection connection = DatabaseConfig.getConnection()) {
+            connection.setAutoCommit(false);
+            try {
+                execute(connection, "INSERT INTO HocLieu(MaHocLieu, TieuDe, LoaiHocLieu) VALUES (?, 'Sách demo', 'Sach')",
+                        demo.hocLieu());
+                execute(connection, "INSERT INTO Sach(MaHocLieu, ISBN) VALUES (?, ?)",
+                        demo.hocLieu(), "ISBN-" + demo.hocLieu());
+                execute(connection, "INSERT INTO BanSao(MaBanSao, MaHocLieu) VALUES (?, ?)",
+                        demo.banSao(), demo.hocLieu());
+                for (String maBanDoc : new String[] {demo.banDoc1(), demo.banDoc2()}) {
+                    execute(connection, """
+                            INSERT INTO BanDoc(MaBanDoc, HoTen, Email, MatKhau, NgayHetHan)
+                            VALUES (?, 'Bạn đọc demo', ?, 'DEMO', CURRENT_DATE + 30)
+                            """, maBanDoc, maBanDoc + "@example.test");
+                }
+                connection.commit();
+            } catch (SQLException error) {
+                connection.rollback();
+                throw error;
+            }
         }
-        return "UNKNOWN";
+    }
+
+    private void cleanup(Demo demo) {
+        try (Connection connection = DatabaseConfig.getConnection()) {
+            connection.setAutoCommit(false);
+            try {
+                execute(connection, "DELETE FROM PhieuMuon WHERE MaPhieu IN (?, ?)", demo.phieu1(), demo.phieu2());
+                execute(connection, "DELETE FROM HocLieu WHERE MaHocLieu = ?", demo.hocLieu());
+                execute(connection, "DELETE FROM BanDoc WHERE MaBanDoc IN (?, ?)", demo.banDoc1(), demo.banDoc2());
+                connection.commit();
+            } catch (SQLException error) {
+                connection.rollback();
+                throw error;
+            }
+        } catch (SQLException error) {
+            System.err.println("Lỗi dọn dữ liệu demo: " + error.getMessage());
+        }
+    }
+
+    private int countAvailable(Demo demo) throws SQLException {
+        return count(demo.hocLieu(), "SELECT COUNT(*) FROM BanSao WHERE MaHocLieu = ? AND TrangThai = 'San sang'");
+    }
+
+    private int countActiveLoans(Demo demo) throws SQLException {
+        return count(demo.banSao(), """
+                SELECT COUNT(*) FROM PhieuMuon WHERE MaBanSao = ? AND TrangThai IN ('Dang muon', 'Qua han')
+                """);
+    }
+
+    private int count(String id, String sql) throws SQLException {
+        try (Connection connection = DatabaseConfig.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, id);
+            try (ResultSet result = statement.executeQuery()) {
+                result.next();
+                return result.getInt(1);
+            }
+        }
+    }
+
+    private void execute(Connection connection, String sql, String... values) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            for (int index = 0; index < values.length; index++) {
+                statement.setString(index + 1, values[index]);
+            }
+            statement.executeUpdate();
+        }
     }
 }

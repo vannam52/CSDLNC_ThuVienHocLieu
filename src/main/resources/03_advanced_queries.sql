@@ -81,7 +81,7 @@ SELECT
     COUNT(DISTINCT b.MaBanSao) AS TongSoBanSaoHienCo
 FROM HocLieu h
 JOIN BanSao b ON h.MaHocLieu = b.MaHocLieu
-JOIN PhieuMuon p ON b.MaBanSao = p.MaBanSao
+LEFT JOIN PhieuMuon p ON b.MaBanSao = p.MaBanSao
 GROUP BY h.MaHocLieu, h.TieuDe
 ORDER BY TongLuotMuon DESC, h.TieuDe;
 
@@ -191,7 +191,7 @@ WHERE TongSoBanSao > 0;
 -- [Q12] Phân tích Kế hoạch Thực thi (Query Execution Plan with EXPLAIN ANALYZE)
 -- Kỹ thuật: Đánh giá chi phí (Cost), số block I/O và thời gian thực thi (ms)
 -- khi tìm kiếm chuỗi ký tự pattern trên chỉ mục GIN Trigram
-EXPLAIN ANALYZE 
+EXPLAIN (ANALYZE, BUFFERS)
 SELECT MaHocLieu, TieuDe 
 FROM HocLieu 
-WHERE TieuDe LIKE '%Database%';
+WHERE TieuDe ILIKE '%Database%';

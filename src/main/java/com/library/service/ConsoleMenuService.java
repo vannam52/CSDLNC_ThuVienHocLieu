@@ -61,7 +61,7 @@ public class ConsoleMenuService {
                     hocLieuDAO.thongKeLuotMuon();
                     break;
                 case 4:
-                    transactionDAO.demoConcurrentBorrow("BS01");
+                    transactionDAO.demoConcurrentBorrow();
                     break;
                 case 5:
                     transactionDAO.demoRollbackAndVerify();

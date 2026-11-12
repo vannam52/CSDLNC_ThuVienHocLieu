@@ -136,7 +136,7 @@ BEGIN
     -- 4. Kiểm tra giới hạn số lượng sách (tối đa 5 cuốn)
     SELECT COUNT(*) INTO v_SoSachDangMuon
     FROM PhieuMuon
-    WHERE MaBanDoc = p_MaBanDoc AND TrangThai = 'Dang muon';
+    WHERE MaBanDoc = p_MaBanDoc AND TrangThai IN ('Dang muon', 'Qua han');
 
     IF v_SoSachDangMuon >= 5 THEN
         RETURN FALSE;
@@ -146,8 +146,8 @@ BEGIN
     SELECT EXISTS (
         SELECT 1 FROM PhieuMuon
         WHERE MaBanDoc = p_MaBanDoc 
-          AND TrangThai = 'Dang muon' 
-          AND NgayHanTra < CURRENT_TIMESTAMP
+          AND (TrangThai = 'Qua han'
+               OR (TrangThai = 'Dang muon' AND NgayHanTra < CURRENT_TIMESTAMP))
     ) INTO v_CoPhieuQuaHan;
 
     IF v_CoPhieuQuaHan THEN
@@ -385,14 +385,30 @@ DECLARE
     v_SoSachDangMuon INT;
     v_TrangThaiBanSao VARCHAR(50);
 BEGIN
+    -- Cùng thứ tự khóa với sp_MuonSach. Đọc lại trạng thái sau khi lấy khóa.
+    IF NEW.TrangThai IN ('Dang muon', 'Qua han') THEN
+        SELECT TrangThai INTO v_TrangThaiBanSao
+        FROM BanSao WHERE MaBanSao = NEW.MaBanSao FOR UPDATE;
+
+        IF NOT FOUND THEN
+            RAISE EXCEPTION 'Mã bản sao % không tồn tại!', NEW.MaBanSao;
+        END IF;
+        IF v_TrangThaiBanSao IS DISTINCT FROM 'San sang' THEN
+            RAISE EXCEPTION 'Bản sao % hiện không sẵn sàng để mượn (Trạng thái: %)!',
+                NEW.MaBanSao, v_TrangThaiBanSao USING ERRCODE = '55000';
+        END IF;
+    END IF;
+
     -- 1. Kiểm tra bạn đọc
     SELECT TaiKhoanBiKhoa, NgayHetHan 
     INTO v_BiKhoa, v_NgayHetHan
     FROM BanDoc
-    WHERE MaBanDoc = NEW.MaBanDoc;
+    WHERE MaBanDoc = NEW.MaBanDoc
+    FOR UPDATE;
 
     IF NOT FOUND THEN
-        RAISE EXCEPTION 'Mã bạn đọc % không tồn tại trong hệ thống!', NEW.MaBanDoc;
+        RAISE EXCEPTION 'Mã bạn đọc % không tồn tại trong hệ thống!', NEW.MaBanDoc
+            USING ERRCODE = '23503';
     END IF;
 
     IF v_BiKhoa = TRUE THEN
@@ -406,23 +422,19 @@ BEGIN
     -- 2. Kiểm tra giới hạn mượn (tối đa 5 cuốn đang mượn)
     SELECT COUNT(*) INTO v_SoSachDangMuon
     FROM PhieuMuon
-    WHERE MaBanDoc = NEW.MaBanDoc AND TrangThai = 'Dang muon';
+    WHERE MaBanDoc = NEW.MaBanDoc AND TrangThai IN ('Dang muon', 'Qua han');
 
     IF v_SoSachDangMuon >= 5 THEN
         RAISE EXCEPTION 'Bạn đọc % đã đạt giới hạn mượn tối đa (5 cuốn)!', NEW.MaBanDoc;
     END IF;
 
-    -- 3. Kiểm tra tính khả dụng của bản sao
-    SELECT TrangThai INTO v_TrangThaiBanSao
-    FROM BanSao
-    WHERE MaBanSao = NEW.MaBanSao;
-
-    IF NOT FOUND THEN
-        RAISE EXCEPTION 'Mã bản sao % không tồn tại!', NEW.MaBanSao;
-    END IF;
-
-    IF v_TrangThaiBanSao IS DISTINCT FROM 'San sang' THEN
-        RAISE EXCEPTION 'Bản sao % hiện không sẵn sàng để mượn (Trạng thái: %)!', NEW.MaBanSao, COALESCE(v_TrangThaiBanSao, 'Không xác định');
+    IF EXISTS (
+        SELECT 1 FROM PhieuMuon
+        WHERE MaBanDoc = NEW.MaBanDoc
+          AND (TrangThai = 'Qua han'
+               OR (TrangThai = 'Dang muon' AND NgayHanTra < CURRENT_TIMESTAMP))
+    ) THEN
+        RAISE EXCEPTION 'Bạn đọc % còn phiếu mượn quá hạn!', NEW.MaBanDoc;
     END IF;
 
     -- 4. Tự động thiết lập thời hạn trả nếu chưa có (Mặc định 14 ngày)
@@ -450,7 +462,7 @@ AS $$
 BEGIN
     IF TG_OP = 'INSERT' THEN
         -- Khi tạo phiếu mới ở trạng thái 'Dang muon', tự động đổi BanSao sang 'Dang muon'
-        IF NEW.TrangThai = 'Dang muon' THEN
+        IF NEW.TrangThai IN ('Dang muon', 'Qua han') THEN
             UPDATE BanSao
             SET TrangThai = 'Dang muon'
             WHERE MaBanSao = NEW.MaBanSao;
@@ -464,7 +476,7 @@ BEGIN
             SET TrangThai = 'San sang'
             WHERE MaBanSao = NEW.MaBanSao;
         -- Nếu phiếu chuyển lại 'Dang muon'
-        ELSIF NEW.TrangThai = 'Dang muon' AND (OLD.TrangThai IS DISTINCT FROM 'Dang muon') THEN
+        ELSIF NEW.TrangThai IN ('Dang muon', 'Qua han') AND OLD.TrangThai = 'Da tra' THEN
             UPDATE BanSao
             SET TrangThai = 'Dang muon'
             WHERE MaBanSao = NEW.MaBanSao;

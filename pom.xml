@@ -12,6 +12,7 @@
         <maven.compiler.release>17</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <exec.mainClass>com.library.Main</exec.mainClass>
     </properties>
 
     <repositories>
@@ -54,7 +55,7 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.5.0</version>
                 <configuration>
-                    <mainClass>com.library.Main</mainClass>
+                    <mainClass>${exec.mainClass}</mainClass>
                     <systemProperties>
                         <systemProperty>
                             <key>file.encoding</key>
@@ -65,4 +66,13 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>gui</id>
+            <properties>
+                <exec.mainClass>com.library.gui.MainGui</exec.mainClass>
+            </properties>
+        </profile>
+    </profiles>
 </project>
