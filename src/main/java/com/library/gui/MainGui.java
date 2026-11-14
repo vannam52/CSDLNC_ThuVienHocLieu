@@ -35,8 +35,8 @@ public class MainGui extends JFrame {
     public MainGui() {
         super("Dashboard Thư viện Học liệu — CSDL Nâng cao Đề tài 3");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setSize(1150, 730);
-        setMinimumSize(new Dimension(900, 600));
+        setSize(1240, 760);
+        setMinimumSize(new Dimension(950, 620));
         setLocationRelativeTo(null);
         setBackground(BG_MAIN);
 
@@ -68,16 +68,22 @@ public class MainGui extends JFrame {
         titlePanel.add(subtitle);
         header.add(titlePanel, BorderLayout.WEST);
 
+        // Nút xem nhanh mã nguồn SQL của tab đang mở
+        JButton btnViewActiveSql = makeButton("📄 Xem mã SQL của Tab này", new Color(0x1E293B));
+        btnViewActiveSql.addActionListener(e -> showActiveTabSql());
+        header.add(btnViewActiveSql, BorderLayout.EAST);
+
         // ---- Tabs ----
         tabs = new JTabbedPane(JTabbedPane.TOP);
         tabs.setFont(FONT_BOLD);
         tabs.setBackground(BG_MAIN);
 
-        tabs.addTab("1. 4NF & Kế thừa",          new PanelNormalization());
-        tabs.addTab("2. Giao dịch Đồng thời",      new PanelConcurrency());
-        tabs.addTab("3. GIN Trigram Benchmark",   new PanelGinBenchmark());
-        tabs.addTab("4. ObjectDB & OQL/JPQL",     new PanelObjectDB());
-        tabs.addTab("5. Cây Chủ đề (Đệ quy)",     new PanelSubjectTree());
+        tabs.addTab("1. 4NF & Kế thừa",               new PanelNormalization());
+        tabs.addTab("2. Giao dịch Đồng thời",           new PanelConcurrency());
+        tabs.addTab("3. GIN Trigram Benchmark",        new PanelGinBenchmark());
+        tabs.addTab("4. ObjectDB & OQL/JPQL",          new PanelObjectDB());
+        tabs.addTab("5. Cây Chủ đề (Đệ quy)",          new PanelSubjectTree());
+        tabs.addTab("6. Trigger & Thủ tục (PL/pgSQL)", new PanelPlPgSql());
 
         // ---- Footer ----
         JPanel footer = new JPanel(new FlowLayout(FlowLayout.RIGHT, 16, 6));
@@ -94,6 +100,37 @@ public class MainGui extends JFrame {
         add(header, BorderLayout.NORTH);
         add(tabs,   BorderLayout.CENTER);
         add(footer, BorderLayout.SOUTH);
+    }
+
+    private void showActiveTabSql() {
+        int idx = tabs.getSelectedIndex();
+        switch (idx) {
+            case 0 -> SqlViewerDialog.show(this,
+                    "Chuẩn hóa 4NF & So sánh Kế thừa (Joined Table vs Single Table)",
+                    "06_thuc_nghiem_de_tai_3.sql & 01_schema.sql",
+                    SqlSnippets.TAB1_4NF_INHERITANCE);
+            case 1 -> SqlViewerDialog.show(this,
+                    "Thủ tục Mượn sách, Khóa dòng FOR UPDATE & Rollback",
+                    "04_transaction_procedure.sql",
+                    SqlSnippets.TAB2_CONCURRENCY);
+            case 2 -> SqlViewerDialog.show(this,
+                    "Chỉ mục GIN Trigram & Phân tích Kế hoạch Thực thi (EXPLAIN ANALYZE)",
+                    "01_schema.sql & pg_trgm",
+                    SqlSnippets.TAB3_GIN_TRIGRAM);
+            case 3 -> SqlViewerDialog.show(this,
+                    "Bộ 5 truy vấn OQL / JPQL trên CSDL Hướng Đối Tượng ObjectDB",
+                    "OqlQueryDAO.java",
+                    SqlSnippets.TAB4_OBJECTDB_OQL);
+            case 4 -> SqlViewerDialog.show(this,
+                    "Truy vấn Đệ quy Duyệt cây Phân cấp (WITH RECURSIVE) & Học liệu Đa chủ đề",
+                    "03_advanced_queries.sql [Q01 & Q03]",
+                    SqlSnippets.TAB5_RECURSIVE_TREE);
+            case 5 -> SqlViewerDialog.show(this,
+                    "Bộ Thủ tục, Trigger tính phạt trễ hạn & View Tổng hợp (PL/pgSQL)",
+                    "05_triggers_and_functions.sql",
+                    SqlSnippets.TAB6_PLPGSQL_TRIGGERS);
+            default -> { }
+        }
     }
 
     // ===== Tiện ích dùng chung =====
@@ -153,7 +190,17 @@ public class MainGui extends JFrame {
         lbl.setFont(FONT_HEADER);
         lbl.setForeground(ACCENT);
         lbl.setBorder(BorderFactory.createEmptyBorder(0, 0, 4, 0));
+        lbl.setAlignmentX(Component.LEFT_ALIGNMENT);
         return lbl;
+    }
+
+    /** Đảm bảo mọi component trong container dùng BoxLayout(Y_AXIS) căn lề trái đồng nhất */
+    public static void alignLeft(JPanel container) {
+        for (Component c : container.getComponents()) {
+            if (c instanceof JComponent jc) {
+                jc.setAlignmentX(Component.LEFT_ALIGNMENT);
+            }
+        }
     }
 
     /** Tạo JTable với style đồng nhất */

@@ -117,6 +117,8 @@ public class PanelNormalization extends JPanel {
         content.add(Box.createVerticalStrut(10));
         content.add(noteBox);
 
+        MainGui.alignLeft(content);
+
         JScrollPane scroll = new JScrollPane(content);
         scroll.setBorder(null);
         scroll.getVerticalScrollBar().setUnitIncrement(16);
