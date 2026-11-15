@@ -69,13 +69,14 @@ public class PanelConcurrency extends JPanel {
         JPanel explainPanel = new JPanel(new GridLayout(1, 2, 12, 0));
         explainPanel.setOpaque(false);
         explainPanel.add(makeInfoBox("Cơ chế khoá trong sp_MuonSach",
-                "SELECT ... FOR UPDATE NO WAIT\n" +
-                "-> Luồng đến sau nhận ngay lỗi 55000\n" +
-                "   (chặn lập tức, không chờ, không deadlock)\n\n" +
-                "PostgreSQL dùng row-level lock:\n" +
-                "• Phiên 1 khoá hàng BanSao trước\n" +
-                "• Phiên 2 cố khoá -> bị chặn ngay lập tức\n" +
-                "• Đảm bảo chỉ duy nhất 1 PhieuMuon được tạo"));
+                "SELECT ... FOR UPDATE (Row-Level Locking)\n" +
+                "-> Khóa độc quyền bản ghi bản sao đang sẵn sàng\n" +
+                "   (Chống tranh chấp Race Condition & Lost Update)\n\n" +
+                "Phân tích luồng thực thi:\n" +
+                "• Phiên 1: Khóa bản sao trước -> Tạo phiếu & COMMIT\n" +
+                "• Phiên 2: Chờ khóa -> Đọc trạng thái 'Dang muon'\n" +
+                "• Trạng thái không khả dụng -> Bắn lỗi 55000 & ROLLBACK\n" +
+                "• Đảm bảo chỉ duy nhất 1 PhieuMuon được tạo thành công"));
         explainPanel.add(makeInfoBox("Cơ chế bảo toàn tính toàn vẹn (Rollback)",
                 "ATOMIC: UPDATE + INSERT trong 1 giao dịch\n" +
                 "-> Nếu INSERT thất bại (vi phạm FK)\n" +
@@ -96,6 +97,8 @@ public class PanelConcurrency extends JPanel {
         content.add(MainGui.sectionLabel("Phân tích cơ chế kỹ thuật"));
         content.add(Box.createVerticalStrut(8));
         content.add(explainPanel);
+
+        MainGui.alignLeft(content);
 
         mainScroll = new JScrollPane(content);
         mainScroll.setBorder(null);

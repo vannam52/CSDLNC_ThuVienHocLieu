@@ -91,6 +91,7 @@ public class PanelSubjectTree extends JPanel {
         tblRaw.setModel(tableModel);
         JScrollPane tableScroll = new JScrollPane(tblRaw);
         tableScroll.setBorder(BorderFactory.createLineBorder(MainGui.BORDER_COL));
+        tableScroll.setPreferredSize(new Dimension(500, 300));
 
         JPanel tableCard = new JPanel(new BorderLayout(0, 6));
         tableCard.setBackground(Color.WHITE);
@@ -173,13 +174,24 @@ public class PanelSubjectTree extends JPanel {
         JPanel content = new JPanel();
         content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
         content.setOpaque(false);
-        content.add(MainGui.sectionLabel("Thực nghiệm 5: Cây Chủ đề (WITH RECURSIVE) & Học liệu Đa chủ đề"));
-        content.add(Box.createVerticalStrut(8));
+
+        JLabel sectionTitle = MainGui.sectionLabel("Thực nghiệm 5: Cây Chủ đề (WITH RECURSIVE) & Học liệu Đa chủ đề");
+        sectionTitle.setAlignmentX(Component.LEFT_ALIGNMENT);
+        content.add(sectionTitle);
+        addStrut(content, 8);
+
+        topSplit.setAlignmentX(Component.LEFT_ALIGNMENT);
         content.add(topSplit);
-        content.add(Box.createVerticalStrut(14));
+        addStrut(content, 14);
+
+        multiCard.setAlignmentX(Component.LEFT_ALIGNMENT);
         content.add(multiCard);
-        content.add(Box.createVerticalStrut(14));
+        addStrut(content, 14);
+
+        noteRow.setAlignmentX(Component.LEFT_ALIGNMENT);
         content.add(noteRow);
+
+        MainGui.alignLeft(content);
 
         JScrollPane mainScroll = new JScrollPane(content);
         mainScroll.setBorder(null);
@@ -187,6 +199,14 @@ public class PanelSubjectTree extends JPanel {
 
         add(toolbar, BorderLayout.NORTH);
         add(mainScroll, BorderLayout.CENTER);
+    }
+
+    private void addStrut(JPanel container, int height) {
+        Component strut = Box.createVerticalStrut(height);
+        if (strut instanceof JComponent jc) {
+            jc.setAlignmentX(Component.LEFT_ALIGNMENT);
+        }
+        container.add(strut);
     }
 
     private void loadData() {

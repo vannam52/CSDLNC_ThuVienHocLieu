@@ -129,6 +129,8 @@ public class PanelGinBenchmark extends JPanel {
         content.add(Box.createVerticalStrut(8));
         content.add(notePanel);
 
+        MainGui.alignLeft(content);
+
         JScrollPane mainScroll = new JScrollPane(content);
         mainScroll.setBorder(null);
         mainScroll.getVerticalScrollBar().setUnitIncrement(16);
