@@ -84,14 +84,15 @@ public class ScreenshotExporter {
                         Thread.sleep(300);
                         saveComponent(gui, new File(outDir, "Hinh_GUI_Tab4_ObjectDB_OQL.png"));
 
-                        // --- 5. Tab 5: Cây chủ đề ---
-                        System.out.println("-> Đang chạy và chụp Tab 5 (Cây chủ đề WITH RECURSIVE)...");
-                        SwingUtilities.invokeAndWait(() -> tabs.setSelectedIndex(4));
-                        PanelSubjectTree p5 = (PanelSubjectTree) tabs.getSelectedComponent();
-                        SwingUtilities.invokeAndWait(() -> p5.getBtnLoad().doClick());
-                        waitForButton(p5.getBtnLoad());
-                        Thread.sleep(300);
-                        saveComponent(gui, new File(outDir, "Hinh_GUI_Tab5_CayChuDe_Recursive.png"));
+                        // --- 5. Tab 5 (nếu còn PanelSubjectTree) ---
+                        if (tabs.getTabCount() > 4 && tabs.getComponentAt(4) instanceof PanelSubjectTree p5) {
+                            System.out.println("-> Đang chạy và chụp Tab 5 (Cây chủ đề WITH RECURSIVE)...");
+                            SwingUtilities.invokeAndWait(() -> tabs.setSelectedIndex(4));
+                            SwingUtilities.invokeAndWait(() -> p5.getBtnLoad().doClick());
+                            waitForButton(p5.getBtnLoad());
+                            Thread.sleep(300);
+                            saveComponent(gui, new File(outDir, "Hinh_GUI_Tab5_CayChuDe_Recursive.png"));
+                        }
 
                         System.out.println("=== HOÀN TẤT CHỤP 5 ẢNH MINH CHỨNG THỰC NGHIỆM! ===");
                         gui.dispose();

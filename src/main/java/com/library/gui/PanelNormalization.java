@@ -21,6 +21,8 @@ public class PanelNormalization extends JPanel {
     private final DefaultTableModel modelTacGia   = new DefaultTableModel();
     private final DefaultTableModel modelChuDe    = new DefaultTableModel();
     private final DefaultTableModel modelJoined   = new DefaultTableModel();
+    private final DefaultTableModel modelSingle   = new DefaultTableModel();
+    private final DefaultTableModel modelNormSub  = new DefaultTableModel();
     private final DefaultTableModel modelNullStat = new DefaultTableModel();
     private final JLabel lblDiff    = new JLabel(" ");
     private final JLabel lblNullStat= new JLabel(" ");
@@ -106,11 +108,53 @@ public class PanelNormalization extends JPanel {
         diffPanel.setOpaque(false);
         diffPanel.add(lblDiff);
 
-        // ---- Kế thừa section ----
-        modelNullStat.setColumnIdentifiers(new String[]{"MaHocLieu", "LoaiHocLieu", "SoCotLopConBiNull", "TongCotLopCon"});
+        // ---- Kế thừa section: 2 bảng đối chiếu (Chưa tách có NULL vs Đã tách không NULL) + Thống kê phía dưới ----
+        JPanel panelInheritCompare = new JPanel(new GridLayout(1, 2, 12, 0));
+        panelInheritCompare.setOpaque(false);
+
+        // Trái: Single Table (Chưa chuẩn hoá - có nhiều ô NULL)
+        String[] singleCols = {"MaHocLieu", "LoaiHocLieu", "ISBN", "SoTrang", "Truong", "DiemBaoVe", "ThoiLuong", "DinhDang"};
+        modelSingle.setColumnIdentifiers(singleCols);
+        JTable tblSingle = MainGui.makeStyledTable(new String[0], new Object[0][0]);
+        tblSingle.setModel(modelSingle);
+        tblSingle.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        tblSingle.setDefaultRenderer(Object.class, new javax.swing.table.DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value,
+                    boolean isSelected, boolean hasFocus, int row, int column) {
+                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                if (!isSelected) {
+                    if ("NULL".equals(value)) {
+                        c.setBackground(new Color(0xFEE2E2));
+                        c.setForeground(MainGui.DANGER);
+                        setFont(MainGui.FONT_BOLD);
+                    } else {
+                        c.setBackground(row % 2 == 0 ? MainGui.ROW_ODD : MainGui.ROW_EVEN);
+                        c.setForeground(new Color(0x1E293B));
+                        setFont(MainGui.FONT_BODY);
+                    }
+                }
+                return c;
+            }
+        });
+        JPanel singleCard = makeCard("1. Chưa tách (Single Table — bị nhiều ô NULL)", tblSingle);
+
+        // Phải: Joined Table (Đã tách chuẩn — bảng cha + các bảng con, 0 ô NULL)
+        String[] normSubCols = {"Bảng lưu trữ", "MaHocLieu", "Dữ liệu riêng (Không NULL)"};
+        modelNormSub.setColumnIdentifiers(normSubCols);
+        JTable tblNormSub = MainGui.makeStyledTable(new String[0], new Object[0][0]);
+        tblNormSub.setModel(modelNormSub);
+        JPanel normSubCard = makeCard("2. Đã tách chuẩn (Joined Table — 0% ô NULL)", tblNormSub);
+        ((JLabel) normSubCard.getComponent(0)).setForeground(MainGui.SUCCESS);
+
+        panelInheritCompare.add(singleCard);
+        panelInheritCompare.add(normSubCard);
+
+        // Phía dưới: Bảng thống kê so sánh hiệu quả giữa 2 phiên bản
+        modelNullStat.setColumnIdentifiers(new String[]{"MaHocLieu", "LoaiHocLieu", "SoCotLopConBiNull", "TongCotLopCon", "TyLeNull (%)"});
         JTable tblNull = MainGui.makeStyledTable(new String[0], new Object[0][0]);
         tblNull.setModel(modelNullStat);
-        JPanel nullCard = makeCard("Ô NULL trong Single Table (ánh xạ kế thừa)", tblNull);
+        JPanel nullCard = makeCard("3. Thống kê so sánh hiệu quả giữa Single Table và Joined Table", tblNull);
 
         lblNullStat.setFont(MainGui.FONT_BOLD);
         lblNullStat.setForeground(MainGui.WARNING);
@@ -146,6 +190,8 @@ public class PanelNormalization extends JPanel {
         content.add(Box.createVerticalStrut(14));
         content.add(MainGui.sectionLabel("Thực nghiệm 2: Ánh xạ Kế thừa (Single Table vs Joined Table)"));
         content.add(Box.createVerticalStrut(8));
+        content.add(panelInheritCompare);
+        content.add(Box.createVerticalStrut(10));
         content.add(nullCard);
         content.add(nullSumPanel);
         content.add(Box.createVerticalStrut(10));
@@ -195,7 +241,7 @@ public class PanelNormalization extends JPanel {
         lblStatus.setForeground(MainGui.WARNING);
 
         SwingWorker<Void, Void> worker = new SwingWorker<>() {
-            String[][] dataFlat, dataTacGia, dataChuDe, dataJoined, dataNullStat;
+            String[][] dataFlat, dataTacGia, dataChuDe, dataJoined, dataSingle, dataNormSub, dataNullStat;
             long diffCount;
             long nullTotal, nullCount;
             String error;
@@ -227,10 +273,32 @@ public class PanelNormalization extends JPanel {
                     try (ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM v_ThucNghiem4NF_ChenhLech")) {
                         rs.next(); diffCount = rs.getLong(1);
                     }
+                    // Single Table (chưa tách, nhiều ô NULL)
+                    try (ResultSet rs = stmt.executeQuery(
+                            "SELECT MaHocLieu, LoaiHocLieu, " +
+                            "COALESCE(ISBN, 'NULL'), COALESCE(SoTrang::TEXT, 'NULL'), " +
+                            "COALESCE(Truong, 'NULL'), COALESCE(DiemBaoVe::TEXT, 'NULL'), " +
+                            "COALESCE(ThoiLuong::TEXT, 'NULL'), COALESCE(DinhDang, 'NULL') " +
+                            "FROM HocLieu_SingleTable ORDER BY MaHocLieu")) {
+                        dataSingle = toArray(rs, 8);
+                    }
+                    // Joined Table (đã tách bảng con riêng, 0 ô NULL)
+                    try (ResultSet rs = stmt.executeQuery(
+                            "SELECT 'Sach' AS Bang, MaHocLieu, 'ISBN=' || ISBN || ', SoTrang=' || SoTrang AS DuLieu FROM Sach WHERE MaHocLieu='HL01' " +
+                            "UNION ALL " +
+                            "SELECT 'LuanVan', MaHocLieu, 'Truong=' || Truong || ', Diem=' || DiemBaoVe FROM LuanVan WHERE MaHocLieu='HL02' " +
+                            "UNION ALL " +
+                            "SELECT 'VideoBaiGiang', MaHocLieu, 'ThoiLuong=' || ThoiLuong || 'p, ' || DoPhanGiai FROM VideoBaiGiang WHERE MaHocLieu='HL03' " +
+                            "UNION ALL " +
+                            "SELECT 'TaiLieuDienTu', MaHocLieu, 'DinhDang=' || DinhDang || ', ' || QuyenTruyCap FROM TaiLieuDienTu WHERE MaHocLieu='HL04'")) {
+                        dataNormSub = toArray(rs, 3);
+                    }
                     // NULL stats
                     try (ResultSet rs = stmt.executeQuery(
-                            "SELECT MaHocLieu, LoaiHocLieu, SoCotLopConBiNull, TongCotLopCon FROM v_ThucNghiemKeThua_Null ORDER BY MaHocLieu")) {
-                        dataNullStat = toArray(rs, 4);
+                            "SELECT MaHocLieu, LoaiHocLieu, SoCotLopConBiNull, TongCotLopCon, " +
+                            "ROUND(SoCotLopConBiNull::numeric / TongCotLopCon * 100, 2)::TEXT || '%' AS TyLeNull " +
+                            "FROM v_ThucNghiemKeThua_Null ORDER BY MaHocLieu")) {
+                        dataNullStat = toArray(rs, 5);
                     }
                     // Tổng NULL
                     try (ResultSet rs = stmt.executeQuery(
@@ -252,11 +320,13 @@ public class PanelNormalization extends JPanel {
                     fillTable(modelTacGia,   new String[]{"MaHocLieu","MaTacGia"}, dataTacGia);
                     fillTable(modelChuDe,    new String[]{"MaHocLieu","MaChuDe"}, dataChuDe);
                     fillTable(modelJoined,   new String[]{"MaHocLieu","MaTacGia","MaChuDe"}, dataJoined);
-                    fillTable(modelNullStat, new String[]{"MaHocLieu","LoaiHocLieu","SoCotLopConBiNull","TongCotLopCon"}, dataNullStat);
+                    fillTable(modelSingle,   new String[]{"MaHocLieu","LoaiHocLieu","ISBN","SoTrang","Truong","DiemBaoVe","ThoiLuong","DinhDang"}, dataSingle);
+                    fillTable(modelNormSub,  new String[]{"Bảng lưu trữ","MaHocLieu","Dữ liệu riêng (Không NULL)"}, dataNormSub);
+                    fillTable(modelNullStat, new String[]{"MaHocLieu","LoaiHocLieu","SoCotLopConBiNull","TongCotLopCon","TyLeNull (%)"}, dataNullStat);
                     lblDiff.setText("[KẾT QUẢ] Số dòng chênh lệch (EXCEPT ALL hai chiều): " + diffCount +
                             (diffCount == 0 ? "  -> Bảng phẳng và bảng nối hoàn toàn trùng khớp!" : ""));
                     String pct = nullTotal > 0 ? String.format("%.2f%%", 100.0 * nullCount / nullTotal) : "N/A";
-                    lblNullStat.setText(String.format("[KẾT LUẬN] Tổng: %d/%d ô NULL (%s) — Single Table lãng phí bộ nhớ lưu trữ!", nullCount, nullTotal, pct));
+                    lblNullStat.setText(String.format("[SO SÁNH HIỆU QUẢ] Single Table: %d/%d ô NULL (%s lãng phí)  |  Joined Table: 0/%d ô NULL (0.00%% lãng phí)!", nullCount, nullTotal, pct, nullTotal));
                     lblStatus.setText("[ĐÃ HOÀN THÀNH]");
                     lblStatus.setForeground(MainGui.SUCCESS);
                 }

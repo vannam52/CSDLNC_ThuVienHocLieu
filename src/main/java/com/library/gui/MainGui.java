@@ -85,9 +85,8 @@ public class MainGui extends JFrame {
         tabs.addTab("2. Giao dịch Đồng thời", new PanelConcurrency());
         tabs.addTab("3. GIN Trigram Benchmark", new PanelGinBenchmark());
         tabs.addTab("4. ObjectDB & OQL/JPQL", new PanelObjectDB());
-        tabs.addTab("5. Cây Chủ đề (Đệ quy)", new PanelSubjectTree());
-        tabs.addTab("6. 12 Truy vấn SQL Nâng cao", new PanelAdvancedQueries());
-        tabs.addTab("7. PL/pgSQL & Triggers", new PanelPlPgSql());
+        tabs.addTab("5. 12 Truy vấn SQL Nâng cao", new PanelAdvancedQueries());
+        tabs.addTab("6. PL/pgSQL & Triggers", new PanelPlPgSql());
 
         // ---- Footer ----
         JPanel footer = new JPanel(new FlowLayout(FlowLayout.RIGHT, 16, 6));
@@ -126,9 +125,9 @@ public class MainGui extends JFrame {
                     "OqlQueryDAO.java",
                     SqlSnippets.TAB4_OBJECTDB_OQL);
             case 4 -> SqlViewerDialog.show(this,
-                    "Truy vấn Đệ quy Duyệt cây Phân cấp (WITH RECURSIVE) & Học liệu Đa chủ đề",
-                    "03_advanced_queries.sql [Q01 & Q03]",
-                    SqlSnippets.TAB5_RECURSIVE_TREE);
+                    "Bộ 12 Truy vấn SQL Nâng cao (Q01 - Q12)",
+                    "03_advanced_queries.sql",
+                    loadResourceText("/03_advanced_queries.sql", SqlSnippets.TAB5_RECURSIVE_TREE));
             case 5 -> SqlViewerDialog.show(this,
                     "Bộ Thủ tục, Trigger tính phạt trễ hạn & View Tổng hợp (PL/pgSQL)",
                     "05_triggers_and_functions.sql",
@@ -136,6 +135,15 @@ public class MainGui extends JFrame {
             default -> {
             }
         }
+    }
+
+    private static String loadResourceText(String resourcePath, String fallback) {
+        try (var is = MainGui.class.getResourceAsStream(resourcePath)) {
+            if (is != null) {
+                return new String(is.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+            }
+        } catch (Exception ignored) { }
+        return fallback;
     }
 
     // ===== Tiện ích dùng chung =====
