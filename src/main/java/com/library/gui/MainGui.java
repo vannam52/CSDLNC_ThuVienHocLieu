@@ -78,6 +78,8 @@ public class MainGui extends JFrame {
         tabs.addTab("3. GIN Trigram Benchmark",   new PanelGinBenchmark());
         tabs.addTab("4. ObjectDB & OQL/JPQL",     new PanelObjectDB());
         tabs.addTab("5. Cây Chủ đề (Đệ quy)",     new PanelSubjectTree());
+        tabs.addTab("6. 12 Truy vấn SQL Nâng cao", new PanelAdvancedQueries());
+        tabs.addTab("7. PL/pgSQL & Triggers",     new PanelPlPgSql());
 
         // ---- Footer ----
         JPanel footer = new JPanel(new FlowLayout(FlowLayout.RIGHT, 16, 6));
