@@ -19,7 +19,11 @@ echo =======================================================
 echo.
 echo  Dang bien dich va khoi dong giao dien GUI Dashboard...
 echo.
-call .\mvn.cmd compile exec:java -Pgui -DskipTests
+if exist ".\mvn.cmd" (
+    call .\mvn.cmd compile exec:java -Pgui -DskipTests
+) else (
+    call mvn compile exec:java -Pgui -DskipTests
+)
 if %errorlevel% neq 0 (
     echo.
     echo [LOI] Khong the khoi chay GUI. Vui long xem thong bao loi o tren.

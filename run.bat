@@ -13,6 +13,10 @@ if %errorlevel% neq 0 (
 echo ====================================================
 echo   Đang khởi chạy ứng dụng Quản lý Thư viện...
 echo ====================================================
-call .\mvn.cmd exec:java
+if exist ".\mvn.cmd" (
+    call .\mvn.cmd exec:java
+) else (
+    call mvn exec:java
+)
 pause
 
